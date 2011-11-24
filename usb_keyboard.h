@@ -261,7 +261,7 @@ static inline void USB_configure_endpoint(uint8_t endp_n,
 		uint8_t type, uint8_t config, uint8_t inte)
 {
 	UENUM   = endp_n;
-	UECONX  = _BV(EPEN);;
+	UECONX  = _BV(EPEN);
 	UECFG0X = type;
 	UECFG1X = config;
 	/* set interrupt enable bits */
@@ -274,51 +274,84 @@ static inline void USB_reset_endpoint_fifo(uint8_t endp_n)
 	UERST = 0x00;
 }
 
-
-/* Acknowledge reception of SETUP */
+/* Acknowledge reception of SETUP packet */
 static inline void USB_ack_SETUP()
 {
 	UEINTX &= ~_BV(RXSTPI);
 }
 
-/* Wait until OUT packet is received from host */
+/* Wait until OUT transaction data is received from host and ready in buffer */
 static inline void USB_wait_OUT()
 {
 	while (bit_is_clear(UEINTX, RXOUTI))
 		;
 }
-/* Read a byte from an OUT packet */
+/* Read a byte from OUT transaction data in buffer */
 static inline uint8_t USB_OUT_read_byte()
 {
 	return UEDATX;
 }
-/* Read a word from an OUT packet */
+/* Read a word from OUT transaction data in buffer */
 static inline uint16_t USB_OUT_read_word()
 {
 	uint8_t low_byte = UEDATX;
 	return (UEDATX << 8) | low_byte;
 }
-/* Acknowledge reception of an OUT packet (after reading with USB_OUT_read_*) */
+/* Acknowledge OUT transaction (after reading with USB_OUT_read_*) */
 static inline void USB_ack_OUT()
 {
 	UEINTX &= ~_BV(RXOUTI);
 }
 
-/* Wait until IN packet can be sent to host */
+/* Wait until IN transaction can be started with the host (wait for IN token) */
 static inline void USB_wait_IN()
 {
 	while (bit_is_clear(UEINTX, TXINI))
 		;
 }
-/* Write a byte to an IN packet */
+/* Write a byte of data to an IN transaction buffer */
 static inline void USB_IN_write_byte(uint8_t byte)
 {
 	UEDATX = byte;
 }
-/* Acknowledge an IN packet (after writing with USB_IN_write_*) */
-static inline void USB_ack_IN()
+/* Flush an IN transaction (after writing with USB_IN_write_*) */
+static inline void USB_flush_IN()
 {
 	UEINTX &= ~_BV(TXINI);
+}
+
+struct setup_packet {
+	uint8_t  bmRequestType;
+	uint8_t  bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
+};
+
+static inline void USB_control_write_complete_status_stage()
+{
+	USB_wait_IN();
+	/* send Zero Length Packet */
+	USB_flush_IN();
+}
+
+static inline void USB_control_read_complete_status_stage()
+{
+	/* wait for Zero Length Packet from host */
+	USB_wait_OUT();
+	/* acknowledge it */
+	USB_ack_OUT();
+}
+
+/* Set device's address */
+static inline void USB_set_addr(uint8_t addr)
+{
+	UDADDR = addr;
+}
+/* Make the controller start using the address configured by USB_set_addr */
+static inline void USB_addr_enable()
+{
+	UDADDR |= _BV(ADDEN);
 }
 
 

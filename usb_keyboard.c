@@ -296,7 +296,7 @@ int8_t usb_keyboard_send(void)
 	uint8_t timeout = UDFNUML + 50;
 	while (1) {
 		// are we ready to transmit?
-		if (bit_is_set(UEINTX, RWAL))
+		if (bit_is_set(UEINTX, TXINI))
 			break;
 		SREG = old_sreg;
 		// has the USB gone offline?
@@ -308,13 +308,15 @@ int8_t usb_keyboard_send(void)
 		cli();
 		UENUM = KEYBOARD_ENDPOINT;
 	}
+	USB_flush_IN();
 	USB_IN_write_byte(keyboard_modifier_keys);
 	USB_IN_write_byte(0);
 	for (int i = 0; i < 30; i++)
 		USB_IN_write_byte(keyboard_keys[i]);
-	UEINTX &= ~(_BV(FIFOCON) | _BV(TXINI));
+	UEINTX &= ~_BV(FIFOCON);
 	keyboard_idle_count = 0;
 	SREG = old_sreg;
+	keyboard_idle_count = keyboard_idle_config - 1;
 	return 0;
 }
 
@@ -345,29 +347,26 @@ ISR(USB_GEN_vect)
 		usb_configuration = 0;
         }
 	if ((device_int_flags & _BV(SOFI)) && usb_configuration) {
-		if (keyboard_idle_config != 0 && (++div4 & 3) == 0) {
+		if (keyboard_idle_config != 0 && (++div4 & 3) == 0 ||
+				keyboard_idle_count == keyboard_idle_config -
+				1) {
 			UENUM = KEYBOARD_ENDPOINT;
 			if (bit_is_set(UEINTX, RWAL)) {
 				keyboard_idle_count++;
 				if (keyboard_idle_count == keyboard_idle_config) {
 					keyboard_idle_count = 0;
+					USB_flush_IN();
 					USB_IN_write_byte(keyboard_modifier_keys);
 					USB_IN_write_byte(0);
 					for (i=0; i<30; i++)
 						USB_IN_write_byte(keyboard_keys[i]);
-					UEINTX &= ~(_BV(FIFOCON) | _BV(TXINI));
+					UEINTX &= ~_BV(FIFOCON);
 				}
 			}
 		}
 	}
 }
 
-
-
-static inline void usb_ack_out(void)
-{
-	UEINTX = ~_BV(RXOUTI);
-}
 
 
 void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
@@ -406,16 +405,26 @@ void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
 		while (bit_is_clear(UEINTX, TXINI) &&
 				bit_is_clear(UEINTX, RXOUTI))
 			;
-		if (bit_is_set(UEINTX, RXOUTI))
+		if (bit_is_set(UEINTX, RXOUTI)) {
+			USB_ack_OUT();
 			return;	// abort
+		}
 		// send IN packet
 		n = len < ENDPOINT0_SIZE ? len : ENDPOINT0_SIZE;
 		for (int i = n; i; --i)
 			USB_IN_write_byte(pgm_read_byte(desc_addr++));
 		len -= n;
-		USB_ack_IN();
+		USB_flush_IN();
 	} while (len || n == ENDPOINT0_SIZE);
+	USB_control_read_complete_status_stage();
 }
+
+void USB_OUT_read_data(void *ptr, uint8_t len)
+{
+	while (len-- > 0)
+		*((uint8_t*)ptr++) = USB_OUT_read_byte();
+}
+
 
 // USB Endpoint Interrupt - endpoint 0 is handled here.  The
 // other endpoints are manipulated by the user-callable
@@ -425,59 +434,58 @@ ISR(USB_COM_vect)
 {
         UENUM = 0;
         if (bit_is_set(UEINTX, RXSTPI)) {
-                uint8_t bmRequestType = USB_OUT_read_byte();
-                uint8_t bRequest      = USB_OUT_read_byte();
-                uint16_t wValue  = USB_OUT_read_word();
-                uint16_t wIndex  = USB_OUT_read_word();
-                uint16_t wLength = USB_OUT_read_word();
-		USB_ack_OUT();
+		struct setup_packet s;
+		USB_OUT_read_data(&s, 8);
 		/* acknowledge setup after reading, because it clears the bank */
 		USB_ack_SETUP();
-                if (bRequest == GET_DESCRIPTOR) {
-			serve_get_descriptor(wValue, wIndex, wLength);
+                if (s.bRequest == GET_DESCRIPTOR) {
+			serve_get_descriptor(s.wValue, s.wIndex, s.wLength);
 			return;
-                } else if (bRequest == SET_ADDRESS && bmRequestType == 0) {
-			USB_ack_IN();
+                } else if (s.bRequest == SET_ADDRESS && s.bmRequestType == 0) {
+			USB_set_addr((uint8_t)s.wValue);
+			USB_control_write_complete_status_stage();
 			USB_wait_IN();
-			UDADDR = wValue | _BV(ADDEN);
+			USB_addr_enable();
 			return;
-		} else if (bRequest == SET_CONFIGURATION && bmRequestType == 0) {
-			usb_configuration = wValue;
-			USB_ack_IN();
+		} else if (s.bRequest == SET_CONFIGURATION && s.bmRequestType == 0) {
+			usb_configuration = s.wValue;
+			USB_control_write_complete_status_stage();
 			USB_configure_endpoint(KEYBOARD_ENDPOINT,
 					EP_TYPE_INTERRUPT_IN,
 					EP_SIZE_32 | EP_DOUBLE_BUFFER,
 					0x00);
 			USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
 			return;
-		} else if (bRequest == GET_CONFIGURATION && bmRequestType == 0x80) {
+		} else if (s.bRequest == GET_CONFIGURATION && s.bmRequestType == 0x80) {
 			USB_wait_IN();
 			USB_IN_write_byte(usb_configuration);
-			USB_ack_IN();
+			USB_flush_IN();
+			USB_control_read_complete_status_stage();
 			return;
-		} else if (bRequest == GET_STATUS) {
+		} else if (s.bRequest == GET_STATUS) {
 			USB_wait_IN();
 			int i = 0;
 			#ifdef SUPPORT_ENDPOINT_HALT
-			if (bmRequestType == 0x82) {
-				UENUM = wIndex;
+			if (s.bmRequestType == 0x82) {
+				UENUM = s.wIndex;
 				if (UECONX & _BV(STALLRQ)) i = 1;
 				UENUM = 0;
 			}
 			#endif
 			USB_IN_write_byte(i);
 			USB_IN_write_byte(0);
-			USB_ack_IN();
+			USB_flush_IN();
+			USB_control_read_complete_status_stage();
 			return;
 		}
 		#ifdef SUPPORT_ENDPOINT_HALT
-		else if ((bRequest == CLEAR_FEATURE || bRequest == SET_FEATURE)
-		  && bmRequestType == 0x02 && wValue == 0) {
-			int i = wIndex & 0x7F;
+		else if ((s.bRequest == CLEAR_FEATURE || s.bRequest == SET_FEATURE)
+		  && s.bmRequestType == 0x02 && s.wValue == 0) {
+			int i = s.wIndex & 0x7F;
 			if (i >= 1 && i <= MAX_ENDPOINT) {
-				USB_ack_IN();
+				USB_control_write_complete_status_stage();
 				UENUM = i;
-				if (bRequest == SET_FEATURE) {
+				if (s.bRequest == SET_FEATURE) {
 					UECONX = _BV(STALLRQ)|_BV(EPEN);
 				} else {
 					UECONX = _BV(STALLRQC)|_BV(RSTDT)|_BV(EPEN);
@@ -488,47 +496,56 @@ ISR(USB_COM_vect)
 			}
 		}
 		#endif
-		else if (wIndex == KEYBOARD_INTERFACE) {
-			if (bmRequestType == 0xA1) {
-				if (bRequest == HID_GET_REPORT) {
+		else if (s.wIndex == KEYBOARD_INTERFACE) {
+			if (is_request_type(s.bmRequestType, MASK_ALL,
+						DEVICE_TO_HOST |
+						CLASS |
+						INTERFACE)) {
+				if (s.bRequest == HID_GET_REPORT) {
 					USB_wait_IN();
 					USB_IN_write_byte(keyboard_modifier_keys);
 					USB_IN_write_byte(0);
 					for (int i=0; i<30; i++)
 						USB_IN_write_byte(keyboard_keys[i]);
-					USB_ack_IN();
+					USB_flush_IN();
+					USB_control_read_complete_status_stage();
 					return;
 				}
-				if (bRequest == HID_GET_IDLE) {
+				if (s.bRequest == HID_GET_IDLE) {
 					USB_wait_IN();
 					USB_IN_write_byte(keyboard_idle_config);
-					USB_ack_IN();
+					USB_flush_IN();
+					USB_control_read_complete_status_stage();
 					return;
 				}
-				if (bRequest == HID_GET_PROTOCOL) {
+				if (s.bRequest == HID_GET_PROTOCOL) {
 					USB_wait_IN();
 					USB_IN_write_byte(keyboard_protocol);
-					USB_ack_IN();
+					USB_flush_IN();
+					USB_control_read_complete_status_stage();
 					return;
 				}
 			}
-			if (bmRequestType == 0x21) {
-				if (bRequest == HID_SET_REPORT) {
+			if (is_request_type(s.bmRequestType, MASK_ALL,
+						HOST_TO_DEVICE |
+						CLASS |
+						INTERFACE)) {
+				if (s.bRequest == HID_SET_REPORT) {
 					USB_wait_OUT();
 					keyboard_leds = USB_OUT_read_byte();
-					usb_ack_out();
-					USB_ack_IN();
+					USB_ack_OUT();
+					USB_control_write_complete_status_stage();
 					return;
 				}
-				if (bRequest == HID_SET_IDLE) {
-					keyboard_idle_config = (wValue >> 8);
+				if (s.bRequest == HID_SET_IDLE) {
+					keyboard_idle_config = (s.wValue >> 8);
 					keyboard_idle_count = 0;
-					USB_ack_IN();
+					USB_control_write_complete_status_stage();
 					return;
 				}
-				if (bRequest == HID_SET_PROTOCOL) {
-					keyboard_protocol = wValue;
-					USB_ack_IN();
+				if (s.bRequest == HID_SET_PROTOCOL) {
+					keyboard_protocol = s.wValue;
+					USB_control_write_complete_status_stage();
 					return;
 				}
 			}
