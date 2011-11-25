@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <avr/io.h>
 
+/* #define CLOCK_8MHZ  for USB operation from 8MHz  crystal */
+/* #define CLOCK_16MHZ for USB operation from 16MHz crystal */
+#define CLOCK_16MHZ
+
 /* check if the PLL has locked to the clock */
 static inline bool PLL_is_locked()
 {
@@ -165,6 +169,12 @@ static inline void USB_wait_IN()
 static inline void USB_IN_write_byte(uint8_t byte)
 {
 	UEDATX = byte;
+}
+/* Write a word of data to an IN transaction buffer */
+static inline void USB_IN_write_word(uint8_t word)
+{
+	UEDATX = (uint8_t)(word & 0x00ff);
+	UEDATX = (uint8_t)(word >> 8);
 }
 /* Flush an IN transaction (after writing with USB_IN_write_*) */
 static inline void USB_flush_IN()

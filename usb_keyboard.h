@@ -1,9 +1,5 @@
 #pragma once
 
-/* #define CLOCK_8MHZ  for USB operation from 8MHz  crystal */
-/* #define CLOCK_16MHZ for USB operation from 16MHz crystal */
-#define CLOCK_16MHZ
-
 #include "usb_hardware.h"
 
 #include <stdint.h>
@@ -148,50 +144,4 @@ extern volatile uint8_t keyboard_leds;
 #define LSB(n) (n & 0xff)
 #define MSB(n) ((n >> 8) & 0xff)
 
-struct setup_packet {
-	uint8_t  bmRequestType;
-	uint8_t  bRequest;
-	uint16_t wValue;
-	uint16_t wIndex;
-	uint16_t wLength;
-};
-
-static inline void USB_control_write_complete_status_stage()
-{
-	USB_wait_IN();
-	/* send Zero Length Packet */
-	USB_flush_IN();
-}
-
-static inline void USB_control_read_complete_status_stage()
-{
-	/* wait for Zero Length Packet from host */
-	USB_wait_OUT();
-	/* acknowledge it */
-	USB_ack_OUT();
-}
-
-
-
-// standard control endpoint request types
-#define GET_STATUS			0
-#define CLEAR_FEATURE			1
-#define SET_FEATURE			3
-#define SET_ADDRESS			5
-#define GET_DESCRIPTOR			6
-#define GET_CONFIGURATION		8
-#define SET_CONFIGURATION		9
-#define GET_INTERFACE			10
-#define SET_INTERFACE			11
-// HID (human interface device)
-#define HID_GET_REPORT			1
-#define HID_GET_IDLE			2
-#define HID_GET_PROTOCOL		3
-#define HID_SET_REPORT			9
-#define HID_SET_IDLE			10
-#define HID_SET_PROTOCOL		11
-// CDC (communication class device)
-#define CDC_SET_LINE_CODING		0x20
-#define CDC_GET_LINE_CODING		0x21
-#define CDC_SET_CONTROL_LINE_STATE	0x22
 #endif

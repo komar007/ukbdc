@@ -25,9 +25,11 @@
 // Version 1.1: Add support for Teensy 2.0
 
 #define USB_SERIAL_PRIVATE_INCLUDE
+
+#include "hid.h"
+
 #include "usb_keyboard.h"
 #include "usb.h"
-
 /**************************************************************************
  *
  *  Configurable Options
@@ -227,29 +229,6 @@ static struct descriptor_list_struct {
 // zero when we are not configured, non-zero when enumerated
 static volatile uint8_t usb_configuration=0;
 
-// which modifier keys are currently pressed
-// 1=left ctrl,    2=left shift,   4=left alt,    8=left gui
-// 16=right ctrl, 32=right shift, 64=right alt, 128=right gui
-uint8_t keyboard_modifier_keys=0;
-
-// which keys are currently pressed, up to 6 keys may be down at once
-uint8_t keyboard_keys[30]={0,0,0,0,0,0};
-
-// protocol setting from the host.  We use exactly the same report
-// either way, so this variable only stores the setting since we
-// are required to be able to report which setting is in use.
-static uint8_t keyboard_protocol=0;
-
-// the idle configuration, how often we send the report to the
-// host (ms * 4) even when it hasn't changed
-static uint8_t keyboard_idle_config=125;
-
-// count until idle timeout
-static uint8_t keyboard_idle_count=0;
-
-// 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
-volatile uint8_t keyboard_leds=0;
-
 
 /**************************************************************************
  *
@@ -281,6 +260,9 @@ uint8_t usb_configured(void)
 	return usb_configuration;
 }
 
+/* remove later, when keyboard related stuff is separated */
+extern uint8_t keyboard_idle_count;
+extern uint8_t keyboard_idle_config;
 
 
 // send the contents of keyboard_keys and keyboard_modifier_keys
@@ -425,6 +407,9 @@ void USB_OUT_read_data(void *ptr, uint8_t len)
 		*((uint8_t*)ptr++) = USB_OUT_read_byte();
 }
 
+struct interface_request_handler interface_request_handlers[] = {
+	{.iface_number = KEYBOARD_INTERFACE, .function = &handle_hid_control_request}
+};
 
 // USB Endpoint Interrupt - endpoint 0 is handled here.  The
 // other endpoints are manipulated by the user-callable
@@ -436,47 +421,70 @@ ISR(USB_COM_vect)
         if (bit_is_set(UEINTX, RXSTPI)) {
 		struct setup_packet s;
 		USB_OUT_read_data(&s, 8);
-		/* acknowledge setup after reading, because it clears the bank */
+		/* acknowledge setup *after* reading, because it clears the bank */
 		USB_ack_SETUP();
+		if (request_type(&s, MASK_REQ_TYPE, STANDARD)) {
+			if (request_type(&s, MASK_REQ_DIR, HOST_TO_DEVICE)) {
+				if (request(&s, SET_ADDRESS)) {
+					USB_set_addr((uint8_t)s.wValue);
+					USB_control_write_complete_status_stage();
+					/* make sure the status stage is over before enabling
+					 * the new address */
+					USB_wait_IN();
+					USB_addr_enable();
+				} else if (request(&s, SET_CONFIGURATION)) {
+					usb_configuration = s.wValue;
+					USB_control_write_complete_status_stage();
+					USB_configure_endpoint(KEYBOARD_ENDPOINT,
+							EP_TYPE_INTERRUPT_IN,
+							EP_SIZE_32 | EP_DOUBLE_BUFFER,
+							0x00);
+					USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
+				}
+			} else if (request_type(&s, MASK_REQ_DIR, DEVICE_TO_HOST)) {
+				if (request(&s, GET_CONFIGURATION)) {
+					USB_wait_IN();
+					USB_IN_write_byte(usb_configuration);
+					USB_flush_IN();
+					USB_control_read_complete_status_stage();
+				} else if (request(&s, GET_STATUS)) {
+					USB_wait_IN();
+					/* bus powered, no remote wakeup */
+					USB_IN_write_word(0x0000);
+					USB_flush_IN();
+					USB_control_read_complete_status_stage();
+				} else if (request(&s, GET_DESCRIPTOR)) {
+					serve_get_descriptor(s.wValue, s.wIndex, s.wLength);
+				}
+			}
+			return;
+		} else if (request_type(&s, MASK_REQ_TYPE | MASK_REQ_RCPT,
+				CLASS | INTERFACE)) {
+			if (s.wIndex == KEYBOARD_INTERFACE) {
+				handle_hid_control_request(&s);
+				return;
+			}
+		}
+
                 if (s.bRequest == GET_DESCRIPTOR) {
-			serve_get_descriptor(s.wValue, s.wIndex, s.wLength);
-			return;
                 } else if (s.bRequest == SET_ADDRESS && s.bmRequestType == 0) {
-			USB_set_addr((uint8_t)s.wValue);
-			USB_control_write_complete_status_stage();
-			USB_wait_IN();
-			USB_addr_enable();
-			return;
 		} else if (s.bRequest == SET_CONFIGURATION && s.bmRequestType == 0) {
-			usb_configuration = s.wValue;
-			USB_control_write_complete_status_stage();
-			USB_configure_endpoint(KEYBOARD_ENDPOINT,
-					EP_TYPE_INTERRUPT_IN,
-					EP_SIZE_32 | EP_DOUBLE_BUFFER,
-					0x00);
-			USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
-			return;
 		} else if (s.bRequest == GET_CONFIGURATION && s.bmRequestType == 0x80) {
-			USB_wait_IN();
-			USB_IN_write_byte(usb_configuration);
-			USB_flush_IN();
-			USB_control_read_complete_status_stage();
-			return;
 		} else if (s.bRequest == GET_STATUS) {
+			#ifdef SUPPORT_ENDPOINT_HALT
 			USB_wait_IN();
 			int i = 0;
-			#ifdef SUPPORT_ENDPOINT_HALT
 			if (s.bmRequestType == 0x82) {
 				UENUM = s.wIndex;
 				if (UECONX & _BV(STALLRQ)) i = 1;
 				UENUM = 0;
 			}
-			#endif
 			USB_IN_write_byte(i);
 			USB_IN_write_byte(0);
 			USB_flush_IN();
 			USB_control_read_complete_status_stage();
 			return;
+			#endif
 		}
 		#ifdef SUPPORT_ENDPOINT_HALT
 		else if ((s.bRequest == CLEAR_FEATURE || s.bRequest == SET_FEATURE)
@@ -496,60 +504,6 @@ ISR(USB_COM_vect)
 			}
 		}
 		#endif
-		else if (s.wIndex == KEYBOARD_INTERFACE) {
-			if (is_request_type(s.bmRequestType, MASK_ALL,
-						DEVICE_TO_HOST |
-						CLASS |
-						INTERFACE)) {
-				if (s.bRequest == HID_GET_REPORT) {
-					USB_wait_IN();
-					USB_IN_write_byte(keyboard_modifier_keys);
-					USB_IN_write_byte(0);
-					for (int i=0; i<30; i++)
-						USB_IN_write_byte(keyboard_keys[i]);
-					USB_flush_IN();
-					USB_control_read_complete_status_stage();
-					return;
-				}
-				if (s.bRequest == HID_GET_IDLE) {
-					USB_wait_IN();
-					USB_IN_write_byte(keyboard_idle_config);
-					USB_flush_IN();
-					USB_control_read_complete_status_stage();
-					return;
-				}
-				if (s.bRequest == HID_GET_PROTOCOL) {
-					USB_wait_IN();
-					USB_IN_write_byte(keyboard_protocol);
-					USB_flush_IN();
-					USB_control_read_complete_status_stage();
-					return;
-				}
-			}
-			if (is_request_type(s.bmRequestType, MASK_ALL,
-						HOST_TO_DEVICE |
-						CLASS |
-						INTERFACE)) {
-				if (s.bRequest == HID_SET_REPORT) {
-					USB_wait_OUT();
-					keyboard_leds = USB_OUT_read_byte();
-					USB_ack_OUT();
-					USB_control_write_complete_status_stage();
-					return;
-				}
-				if (s.bRequest == HID_SET_IDLE) {
-					keyboard_idle_config = (s.wValue >> 8);
-					keyboard_idle_count = 0;
-					USB_control_write_complete_status_stage();
-					return;
-				}
-				if (s.bRequest == HID_SET_PROTOCOL) {
-					keyboard_protocol = s.wValue;
-					USB_control_write_complete_status_stage();
-					return;
-				}
-			}
-		}
 	}
 	UECONX |= _BV(STALLRQ);	// stall
 }

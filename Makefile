@@ -1,6 +1,6 @@
 CC=avr-gcc -Os -std=c99 -lm -mmcu=atmega32u4 -g -ggdb
 WARN=-Wall -Wextra
-SOURCES=main.c usb_keyboard.c
+SOURCES=main.c usb.c hid.c
 
 all: dep
 	make firmware.hex
@@ -15,7 +15,7 @@ dep:
 
 -include Makefile.dep
 
-firmware.elf: main.o usb_keyboard.o
+firmware.elf: main.o usb.o hid.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
 
