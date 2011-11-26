@@ -26,48 +26,36 @@ volatile uint8_t keyboard_leds=0;
 void handle_hid_control_request(struct setup_packet *s)
 {
 	if (request_type(s, MASK_REQ_DIR, DEVICE_TO_HOST)) {
-		if (s->bRequest == HID_GET_REPORT) {
-			USB_wait_IN();
+		USB_wait_IN();
+		switch (s->bRequest) {
+		case HID_GET_REPORT:
 			USB_IN_write_byte(keyboard_modifier_keys);
 			USB_IN_write_byte(0);
 			for (int i=0; i<30; i++)
 				USB_IN_write_byte(keyboard_keys[i]);
-			USB_flush_IN();
-			USB_control_read_complete_status_stage();
-			return;
-		}
-		if (s->bRequest == HID_GET_IDLE) {
-			USB_wait_IN();
+			break;
+		case HID_GET_IDLE:
 			USB_IN_write_byte(keyboard_idle_config);
-			USB_flush_IN();
-			USB_control_read_complete_status_stage();
-			return;
-		}
-		if (s->bRequest == HID_GET_PROTOCOL) {
-			USB_wait_IN();
+			break;
+		case HID_GET_PROTOCOL:
 			USB_IN_write_byte(keyboard_protocol);
-			USB_flush_IN();
-			USB_control_read_complete_status_stage();
-			return;
+			break;
 		}
+		USB_flush_IN();
 	} else {
-		if (s->bRequest == HID_SET_REPORT) {
+		switch(s->bRequest) {
+		case HID_SET_REPORT:
 			USB_wait_OUT();
 			keyboard_leds = USB_OUT_read_byte();
 			USB_ack_OUT();
-			USB_control_write_complete_status_stage();
-			return;
-		}
-		if (s->bRequest == HID_SET_IDLE) {
+			break;
+		case HID_SET_IDLE:
 			keyboard_idle_config = (s->wValue >> 8);
 			keyboard_idle_count = 0;
-			USB_control_write_complete_status_stage();
-			return;
-		}
-		if (s->bRequest == HID_SET_PROTOCOL) {
+			break;
+		case HID_SET_PROTOCOL:
 			keyboard_protocol = s->wValue;
-			USB_control_write_complete_status_stage();
-			return;
+			break;
 		}
 	}
 }

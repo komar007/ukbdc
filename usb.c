@@ -26,10 +26,11 @@
 
 #define USB_SERIAL_PRIVATE_INCLUDE
 
-#include "hid.h"
+#include "aux.h"
 
 #include "usb_keyboard.h"
 #include "usb.h"
+#include "hid.h"
 /**************************************************************************
  *
  *  Configurable Options
@@ -407,7 +408,7 @@ void USB_OUT_read_data(void *ptr, uint8_t len)
 		*((uint8_t*)ptr++) = USB_OUT_read_byte();
 }
 
-struct interface_request_handler interface_request_handlers[] = {
+struct interface_request_handler iface_req_handlers[] = {
 	{.iface_number = KEYBOARD_INTERFACE, .function = &handle_hid_control_request}
 };
 
@@ -460,16 +461,25 @@ ISR(USB_COM_vect)
 			return;
 		} else if (request_type(&s, MASK_REQ_TYPE | MASK_REQ_RCPT,
 				CLASS | INTERFACE)) {
-			if (s.wIndex == KEYBOARD_INTERFACE) {
-				handle_hid_control_request(&s);
+			bool found = false;
+			for (uint8_t i = 0; i < ARR_SZ(iface_req_handlers); ++i) {
+				if (iface_req_handlers[i].iface_number == s.wIndex) {
+					(*iface_req_handlers[i].function)(&s);
+					found = true;
+					break;
+				}
+			}
+			if (found) {
+				if (request_type(&s, MASK_REQ_DIR, DEVICE_TO_HOST))
+					USB_control_read_complete_status_stage();
+				else
+					USB_control_write_complete_status_stage();
+			} else {
 				return;
 			}
 		}
 
                 if (s.bRequest == GET_DESCRIPTOR) {
-                } else if (s.bRequest == SET_ADDRESS && s.bmRequestType == 0) {
-		} else if (s.bRequest == SET_CONFIGURATION && s.bmRequestType == 0) {
-		} else if (s.bRequest == GET_CONFIGURATION && s.bmRequestType == 0x80) {
 		} else if (s.bRequest == GET_STATUS) {
 			#ifdef SUPPORT_ENDPOINT_HALT
 			USB_wait_IN();
