@@ -11,14 +11,14 @@ uint8_t keyboard_keys[30]={0};
 // protocol setting from the host.  We use exactly the same report
 // either way, so this variable only stores the setting since we
 // are required to be able to report which setting is in use.
-static uint8_t keyboard_protocol=0;
+static uint8_t keyboard_protocol=BOOT_PROTOCOL;
 
 /* the idle configuration, how often we send the report to the
  * host (ms * 4) even when it hasn't changed */
-uint8_t keyboard_idle_config=125;
+uint16_t keyboard_idle_config=500;
 
 /* countdown until idle timeout */
-uint8_t keyboard_idle_countdown=125;
+uint16_t keyboard_idle_countdown=500;
 
 bool keyboard_send_now = false;
 
