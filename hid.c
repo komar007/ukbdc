@@ -23,9 +23,9 @@ uint8_t keyboard_idle_count=0;
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
 volatile uint8_t keyboard_leds=0;
 
-void handle_hid_control_request(struct setup_packet *s)
+bool handle_hid_control_request(struct setup_packet *s)
 {
-	if (request_type(s, MASK_REQ_DIR, DEVICE_TO_HOST)) {
+	if (request_type(s, DIRECTION, DEVICE_TO_HOST)) {
 		USB_wait_IN();
 		switch (s->bRequest) {
 		case HID_GET_REPORT:
@@ -40,6 +40,8 @@ void handle_hid_control_request(struct setup_packet *s)
 		case HID_GET_PROTOCOL:
 			USB_IN_write_byte(keyboard_protocol);
 			break;
+		default:
+			return false;
 		}
 		USB_flush_IN();
 	} else {
@@ -56,6 +58,9 @@ void handle_hid_control_request(struct setup_packet *s)
 		case HID_SET_PROTOCOL:
 			keyboard_protocol = s->wValue;
 			break;
+		default:
+			return false;
 		}
 	}
+	return true;
 }

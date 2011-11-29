@@ -49,16 +49,6 @@
 #define VENDOR_ID		0x16C0
 #define PRODUCT_ID		0x047C
 
-
-// USB devices are supposed to implment a halt feature, which is
-// rarely (if ever) used.  If you comment this line out, the halt
-// code will be removed, saving 102 bytes of space (gcc 4.3.0).
-// This is not strictly USB compliant, but works with all major
-// operating systems.
-#define SUPPORT_ENDPOINT_HALT
-
-
-
 /**************************************************************************
  *
  *  Endpoint Buffer Configuration
@@ -275,7 +265,7 @@ int8_t usb_keyboard_send(void)
 		return -1;
 	old_sreg = SREG;
 	cli();
-	UENUM = KEYBOARD_ENDPOINT;
+	USB_set_endpoint(KEYBOARD_ENDPOINT);
 	uint8_t timeout = UDFNUML + 50;
 	while (1) {
 		// are we ready to transmit?
@@ -289,7 +279,7 @@ int8_t usb_keyboard_send(void)
 		// get ready to try checking again
 		old_sreg = SREG;
 		cli();
-		UENUM = KEYBOARD_ENDPOINT;
+		USB_set_endpoint(KEYBOARD_ENDPOINT);
 	}
 	USB_flush_IN();
 	USB_IN_write_byte(keyboard_modifier_keys);
@@ -333,7 +323,7 @@ ISR(USB_GEN_vect)
 		if (keyboard_idle_config != 0 && (++div4 & 3) == 0 ||
 				keyboard_idle_count == keyboard_idle_config -
 				1) {
-			UENUM = KEYBOARD_ENDPOINT;
+			USB_set_endpoint(KEYBOARD_ENDPOINT);
 			if (bit_is_set(UEINTX, RWAL)) {
 				keyboard_idle_count++;
 				if (keyboard_idle_count == keyboard_idle_config) {
@@ -360,7 +350,7 @@ void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
 	const uint8_t *desc_addr;
 	for (uint8_t i=0; ; ++i) {
 		if (i >= NUM_DESC_LIST) {
-			UECONX = _BV(STALLRQ)|_BV(EPEN);  //stall
+			UECONX |= _BV(STALLRQ);  //stall
 			return;
 		}
 		uint16_t desc_val = pgm_read_word(list);
@@ -412,110 +402,127 @@ struct interface_request_handler iface_req_handlers[] = {
 	{.iface_number = KEYBOARD_INTERFACE, .function = &handle_hid_control_request}
 };
 
-// USB Endpoint Interrupt - endpoint 0 is handled here.  The
-// other endpoints are manipulated by the user-callable
-// functions, and the start-of-frame interrupt.
-//
+/* Processes Standard Device Requests. Returns true on no error, false if the
+ * request couldn't be processed or is not supported */
+/* static inline just for size optimization */
+static inline bool process_standard_device_requests(struct setup_packet *s)
+{
+	if (request(s, SET_ADDRESS)) {
+		USB_set_addr((uint8_t)s->wValue);
+		USB_control_write_complete_status_stage();
+		/* make sure the status stage is over before enabling
+		 * the new address */
+		USB_wait_IN();
+		USB_addr_enable();
+	} else if (request(s, SET_CONFIGURATION)) {
+		usb_configuration = s->wValue;
+		USB_control_write_complete_status_stage();
+		USB_configure_endpoint(KEYBOARD_ENDPOINT,
+				EP_TYPE_INTERRUPT_IN,
+				EP_SIZE_32 | EP_DOUBLE_BUFFER,
+				0x00);
+		USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
+	} else if (request(s, GET_CONFIGURATION)) {
+		USB_wait_IN();
+		USB_IN_write_byte(usb_configuration);
+		USB_flush_IN();
+		USB_control_read_complete_status_stage();
+	} else if (request(s, GET_STATUS)) {
+		USB_wait_IN();
+		/* bus powered, no remote wakeup */
+		USB_IN_write_word(0x0000);
+		USB_flush_IN();
+		USB_control_read_complete_status_stage();
+	} else if (request(s, GET_DESCRIPTOR)) {
+		serve_get_descriptor(s->wValue, s->wIndex, s->wLength);
+	} else {
+		return false;
+	}
+	return true;
+}
+
+/* Processes Standard Endpoint Requests. Returns true on no error, false if the
+ * request couldn't be processed or is not supported */
+/* static inline just for size optimization */
+static inline bool process_standard_endpoint_requests(struct setup_packet *s)
+{
+	if (s->bRequest == GET_STATUS) {
+		USB_wait_IN();
+		int i = 0;
+		USB_set_endpoint(s->wIndex);
+		if (USB_endpoint_stalled()) i = 1;
+		USB_set_endpoint(0);
+		USB_IN_write_word(i);
+		USB_flush_IN();
+		USB_control_read_complete_status_stage();
+	} else if ((s->bRequest == CLEAR_FEATURE || s->bRequest == SET_FEATURE)
+			&& s->wValue == ENDPOINT_HALT) {
+		int i = s->wIndex & 0x7F;
+		if (i >= 1 && i <= MAX_ENDPOINT) {
+			USB_control_write_complete_status_stage();
+			USB_set_endpoint(i);
+			if (s->bRequest == SET_FEATURE) {
+				UECONX |= _BV(STALLRQ);
+			} else {
+				UECONX |= _BV(STALLRQC) | _BV(RSTDT);
+				USB_reset_endpoint_fifo(i);
+			}
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+	return true;
+}
+
+/* Processes Standard Interface Requests. Returns true on no error, false if the
+ * request couldn't be processed or is not supported */
+/* static inline just for size optimization */
+static inline bool process_standard_interface_requests(struct setup_packet *s)
+{
+	if (request(s, GET_DESCRIPTOR)) {
+		serve_get_descriptor(s->wValue, s->wIndex, s->wLength);
+	} else {
+		return false;
+	}
+	return true;
+}
+
+/* This handles start-of-frame only so far */
 ISR(USB_COM_vect)
 {
-        UENUM = 0;
+        USB_set_endpoint(0);
         if (bit_is_set(UEINTX, RXSTPI)) {
+		bool all_ok = false;
 		struct setup_packet s;
 		USB_OUT_read_data(&s, 8);
 		/* acknowledge setup *after* reading, because it clears the bank */
 		USB_ack_SETUP();
-		if (request_type(&s, MASK_REQ_TYPE, STANDARD)) {
-			if (request_type(&s, MASK_REQ_DIR, HOST_TO_DEVICE)) {
-				if (request(&s, SET_ADDRESS)) {
-					USB_set_addr((uint8_t)s.wValue);
-					USB_control_write_complete_status_stage();
-					/* make sure the status stage is over before enabling
-					 * the new address */
-					USB_wait_IN();
-					USB_addr_enable();
-				} else if (request(&s, SET_CONFIGURATION)) {
-					usb_configuration = s.wValue;
-					USB_control_write_complete_status_stage();
-					USB_configure_endpoint(KEYBOARD_ENDPOINT,
-							EP_TYPE_INTERRUPT_IN,
-							EP_SIZE_32 | EP_DOUBLE_BUFFER,
-							0x00);
-					USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
-				}
-			} else if (request_type(&s, MASK_REQ_DIR, DEVICE_TO_HOST)) {
-				if (request(&s, GET_CONFIGURATION)) {
-					USB_wait_IN();
-					USB_IN_write_byte(usb_configuration);
-					USB_flush_IN();
-					USB_control_read_complete_status_stage();
-				} else if (request(&s, GET_STATUS)) {
-					USB_wait_IN();
-					/* bus powered, no remote wakeup */
-					USB_IN_write_word(0x0000);
-					USB_flush_IN();
-					USB_control_read_complete_status_stage();
-				} else if (request(&s, GET_DESCRIPTOR)) {
-					serve_get_descriptor(s.wValue, s.wIndex, s.wLength);
-				}
-			}
-			return;
-		} else if (request_type(&s, MASK_REQ_TYPE | MASK_REQ_RCPT,
-				CLASS | INTERFACE)) {
+		/* process all Standard Device Requests */
+		if        (request_type(&s, TYPE | RECIPIENT, STANDARD | DEVICE)) {
+			all_ok = process_standard_device_requests(&s);
+		} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | INTERFACE)) {
+			all_ok = process_standard_interface_requests(&s);
+		} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | ENDPOINT)) {
+			all_ok = process_standard_endpoint_requests(&s);
+		} else if (request_type(&s, TYPE | RECIPIENT, CLASS    | INTERFACE)) {
 			bool found = false;
 			for (uint8_t i = 0; i < ARR_SZ(iface_req_handlers); ++i) {
 				if (iface_req_handlers[i].iface_number == s.wIndex) {
-					(*iface_req_handlers[i].function)(&s);
-					found = true;
+					found = (*iface_req_handlers[i].function)(&s);
 					break;
 				}
 			}
 			if (found) {
-				if (request_type(&s, MASK_REQ_DIR, DEVICE_TO_HOST))
+				if (request_type(&s, DIRECTION, DEVICE_TO_HOST))
 					USB_control_read_complete_status_stage();
 				else
 					USB_control_write_complete_status_stage();
-			} else {
-				return;
+				all_ok = true;
 			}
 		}
-
-                if (s.bRequest == GET_DESCRIPTOR) {
-		} else if (s.bRequest == GET_STATUS) {
-			#ifdef SUPPORT_ENDPOINT_HALT
-			USB_wait_IN();
-			int i = 0;
-			if (s.bmRequestType == 0x82) {
-				UENUM = s.wIndex;
-				if (UECONX & _BV(STALLRQ)) i = 1;
-				UENUM = 0;
-			}
-			USB_IN_write_byte(i);
-			USB_IN_write_byte(0);
-			USB_flush_IN();
-			USB_control_read_complete_status_stage();
-			return;
-			#endif
-		}
-		#ifdef SUPPORT_ENDPOINT_HALT
-		else if ((s.bRequest == CLEAR_FEATURE || s.bRequest == SET_FEATURE)
-		  && s.bmRequestType == 0x02 && s.wValue == 0) {
-			int i = s.wIndex & 0x7F;
-			if (i >= 1 && i <= MAX_ENDPOINT) {
-				USB_control_write_complete_status_stage();
-				UENUM = i;
-				if (s.bRequest == SET_FEATURE) {
-					UECONX = _BV(STALLRQ)|_BV(EPEN);
-				} else {
-					UECONX = _BV(STALLRQC)|_BV(RSTDT)|_BV(EPEN);
-					UERST = (1 << i);
-					UERST = 0;
-				}
-				return;
-			}
-		}
-		#endif
+		if (!all_ok)
+			UECONX |= _BV(STALLRQ);
 	}
-	UECONX |= _BV(STALLRQ);	// stall
 }
-
-

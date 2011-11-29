@@ -130,6 +130,16 @@ static inline void USB_reset_endpoint_fifo(uint8_t endp_n)
 	UERST = 0x00;
 }
 
+static inline void USB_set_endpoint(uint8_t endp_n)
+{
+	UENUM = endp_n;
+}
+
+static inline bool USB_endpoint_stalled()
+{
+	return bit_is_set(UECONX, STALLRQ);
+}
+
 /* Acknowledge reception of SETUP packet */
 static inline void USB_ack_SETUP()
 {
