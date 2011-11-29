@@ -123,21 +123,27 @@ static inline void USB_configure_endpoint(uint8_t endp_n,
 	/* set interrupt enable bits */
 	UEIENX  = inte;
 }
-
+static inline void USB_set_endpoint(uint8_t endp_n)
+{
+	UENUM = endp_n;
+}
 static inline void USB_reset_endpoint_fifo(uint8_t endp_n)
 {
 	UERST = _BV(endp_n);
 	UERST = 0x00;
 }
-
-static inline void USB_set_endpoint(uint8_t endp_n)
-{
-	UENUM = endp_n;
-}
-
 static inline bool USB_endpoint_stalled()
 {
 	return bit_is_set(UECONX, STALLRQ);
+}
+static inline void USB_stall_endpoint()
+{
+	UECONX |= _BV(STALLRQ);
+}
+static inline void USB_unstall_endpoint()
+{
+	/* unstall and reset data toggle bit */
+	UECONX |= _BV(STALLRQC) | _BV(RSTDT);
 }
 
 /* Acknowledge reception of SETUP packet */

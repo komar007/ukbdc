@@ -32,7 +32,7 @@ void HID_send_report()
 	USB_IN_write_buffer(keyboard_keys, 30);
 }
 
-/* [Callbacks section] */
+/* [Callbacks section] ----------------------------------------------------- */
 
 bool HID_handle_control_request(struct setup_packet *s)
 {
@@ -89,9 +89,9 @@ void HID_handle_sof()
 	}
 }
 
-/* [/Callbacks section] */
+/* [/Callbacks section] ---------------------------------------------------- */
 
-/* [API section] */
+/* [API section] ----------------------------------------------------------- */
 
 /* send the contents of keyboard_keys and keyboard_modifier_keys */
 void HID_commit_state()
@@ -99,4 +99,4 @@ void HID_commit_state()
 	keyboard_send_now = true;
 }
 
-/* [/API section] */
+/* [/API section] ---------------------------------------------------------- */

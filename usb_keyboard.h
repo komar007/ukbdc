@@ -5,9 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void usb_init(void);			// initialize everything
-uint8_t usb_configured(void);		// is the USB port configured
-
 // This file does not include the HID debug functions, so these empty
 // macros replace them with nothing, so users can compile code that
 // has calls to these functions.
@@ -129,14 +126,6 @@ uint8_t usb_configured(void);		// is the USB port configured
 
 
 // Everything below this point is only intended for usb_serial.c
-#ifdef USB_SERIAL_PRIVATE_INCLUDE
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
-
-#define MAX_ENDPOINT		4
-
-#define LSB(n) (n & 0xff)
-#define MSB(n) ((n >> 8) & 0xff)
-
-#endif

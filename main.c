@@ -107,8 +107,8 @@ int main(void)
 	PORTD = 0xff;
 	DDRD = 0xff;
 
-	usb_init();
-	while (!usb_configured())
+	USB_init();
+	while (USB_get_configuration() == 0)
 		;
 
 	// Wait an extra second for the PC's operating system to load drivers

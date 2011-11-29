@@ -2,6 +2,9 @@
 
 #include "usb_hardware.h"
 
+/* FIXME: think about it */
+#define MAX_ENDPOINT		4
+
 /* [FLAGS FOR bmRequestType] */
 /* Request direction */
 #define DIRECTION		0x80
@@ -42,7 +45,6 @@
 
 /* The only available in USB endpoint feature selector */
 #define ENDPOINT_HALT			0x00
-
 
 struct setup_packet {
 	uint8_t  bmRequestType;
@@ -90,3 +92,5 @@ static inline void USB_control_read_complete_status_stage()
 	USB_ack_OUT();
 }
 
+void USB_init();
+uint8_t USB_get_configuration();
