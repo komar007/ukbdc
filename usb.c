@@ -1,17 +1,17 @@
 /* USB Keyboard Example for Teensy USB Development Board
  * http://www.pjrc.com/teensy/usb_keyboard.html
  * Copyright (c) 2009 PJRC.COM, LLC
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,9 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-// Version 1.0: Initial Release
-// Version 1.1: Add support for Teensy 2.0
 
 #define USB_SERIAL_PRIVATE_INCLUDE
 
@@ -56,10 +53,6 @@
  **************************************************************************/
 
 #define ENDPOINT0_SIZE		32
-
-#define KEYBOARD_INTERFACE	0
-#define KEYBOARD_ENDPOINT	3
-#define KEYBOARD_SIZE		32
 
 /**************************************************************************
  *
@@ -218,7 +211,7 @@ static struct descriptor_list_struct {
  **************************************************************************/
 
 // zero when we are not configured, non-zero when enumerated
-static volatile uint8_t usb_configuration=0;
+static volatile uint8_t usb_current_conf=0;
 
 
 /**************************************************************************
@@ -239,7 +232,7 @@ void usb_init(void)
         USB_enable();
 	/* make sure DETACH is off, and low speed mode is not set */
 	UDCON &= ~(_BV(DETACH) | _BV(LSM));
-	usb_configuration = 0;
+	usb_current_conf = 0;
         UDIEN = _BV(EORSTE)|_BV(SOFE);
 	sei();
 }
@@ -248,49 +241,7 @@ void usb_init(void)
 // number selected by the HOST
 uint8_t usb_configured(void)
 {
-	return usb_configuration;
-}
-
-/* remove later, when keyboard related stuff is separated */
-extern uint8_t keyboard_idle_count;
-extern uint8_t keyboard_idle_config;
-
-
-// send the contents of keyboard_keys and keyboard_modifier_keys
-int8_t usb_keyboard_send(void)
-{
-	uint8_t old_sreg;
-
-	if (!usb_configuration)
-		return -1;
-	old_sreg = SREG;
-	cli();
-	USB_set_endpoint(KEYBOARD_ENDPOINT);
-	uint8_t timeout = UDFNUML + 50;
-	while (1) {
-		// are we ready to transmit?
-		if (bit_is_set(UEINTX, TXINI))
-			break;
-		SREG = old_sreg;
-		// has the USB gone offline?
-		if (!usb_configuration) return -1;
-		// have we waited too long?
-		if (UDFNUML == timeout) return -1;
-		// get ready to try checking again
-		old_sreg = SREG;
-		cli();
-		USB_set_endpoint(KEYBOARD_ENDPOINT);
-	}
-	USB_flush_IN();
-	USB_IN_write_byte(keyboard_modifier_keys);
-	USB_IN_write_byte(0);
-	for (int i = 0; i < 30; i++)
-		USB_IN_write_byte(keyboard_keys[i]);
-	UEINTX &= ~_BV(FIFOCON);
-	keyboard_idle_count = 0;
-	SREG = old_sreg;
-	keyboard_idle_count = keyboard_idle_config - 1;
-	return 0;
+	return usb_current_conf;
 }
 
 /**************************************************************************
@@ -299,6 +250,13 @@ int8_t usb_keyboard_send(void)
  *
  **************************************************************************/
 
+struct interface_request_handler iface_req_handlers[] = {
+	{.iface_number = KEYBOARD_INTERFACE, .function = &HID_handle_control_request}
+};
+
+struct sof_handler sof_handlers[] = {
+	{.function = &HID_handle_sof}
+};
 
 
 // USB Device Interrupt - handle all device-level events
@@ -306,37 +264,21 @@ int8_t usb_keyboard_send(void)
 //
 ISR(USB_GEN_vect)
 {
-	uint8_t  i;
-	static uint8_t div4=0;
-
         uint8_t device_int_flags = UDINT;
 	/* clear all device interrupt flags */
         UDINT = 0x00;
         if (device_int_flags & _BV(EORSTI)) {
+		/* on end of reset configure endpoint 0 */
 		USB_configure_endpoint(0,
 				EP_TYPE_CONTROL,
 				EP_SIZE_32 | EP_SINGLE_BUFFER,
 				_BV(RXSTPE));
-		usb_configuration = 0;
+		usb_current_conf = 0;
         }
-	if ((device_int_flags & _BV(SOFI)) && usb_configuration) {
-		if (keyboard_idle_config != 0 && (++div4 & 3) == 0 ||
-				keyboard_idle_count == keyboard_idle_config -
-				1) {
-			USB_set_endpoint(KEYBOARD_ENDPOINT);
-			if (bit_is_set(UEINTX, RWAL)) {
-				keyboard_idle_count++;
-				if (keyboard_idle_count == keyboard_idle_config) {
-					keyboard_idle_count = 0;
-					USB_flush_IN();
-					USB_IN_write_byte(keyboard_modifier_keys);
-					USB_IN_write_byte(0);
-					for (i=0; i<30; i++)
-						USB_IN_write_byte(keyboard_keys[i]);
-					UEINTX &= ~_BV(FIFOCON);
-				}
-			}
-		}
+	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
+		/* call all SOF handlers */
+		for (uint8_t i = 0; i < ARR_SZ(sof_handlers); ++i)
+			(*sof_handlers[i].function)();
 	}
 }
 
@@ -371,36 +313,10 @@ void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
 		break;
 	}
 	uint8_t len = (wLength < 256) ? wLength : 255;
-	uint8_t n = 0;
-	if (len > desc_length) len = desc_length;
-	do {
-		// wait for host ready for IN packet
-		while (bit_is_clear(UEINTX, TXINI) &&
-				bit_is_clear(UEINTX, RXOUTI))
-			;
-		if (bit_is_set(UEINTX, RXOUTI)) {
-			USB_ack_OUT();
-			return;	// abort
-		}
-		// send IN packet
-		n = len < ENDPOINT0_SIZE ? len : ENDPOINT0_SIZE;
-		for (int i = n; i; --i)
-			USB_IN_write_byte(pgm_read_byte(desc_addr++));
-		len -= n;
-		USB_flush_IN();
-	} while (len || n == ENDPOINT0_SIZE);
-	USB_control_read_complete_status_stage();
+	bool status = USB_write_blob(desc_addr, len, ENDPOINT0_SIZE, true);
+	if (status)
+		USB_control_read_complete_status_stage();
 }
-
-void USB_OUT_read_data(void *ptr, uint8_t len)
-{
-	while (len-- > 0)
-		*((uint8_t*)ptr++) = USB_OUT_read_byte();
-}
-
-struct interface_request_handler iface_req_handlers[] = {
-	{.iface_number = KEYBOARD_INTERFACE, .function = &handle_hid_control_request}
-};
 
 /* Processes Standard Device Requests. Returns true on no error, false if the
  * request couldn't be processed or is not supported */
@@ -415,7 +331,7 @@ static inline bool process_standard_device_requests(struct setup_packet *s)
 		USB_wait_IN();
 		USB_addr_enable();
 	} else if (request(s, SET_CONFIGURATION)) {
-		usb_configuration = s->wValue;
+		usb_current_conf = s->wValue;
 		USB_control_write_complete_status_stage();
 		USB_configure_endpoint(KEYBOARD_ENDPOINT,
 				EP_TYPE_INTERRUPT_IN,
@@ -424,7 +340,7 @@ static inline bool process_standard_device_requests(struct setup_packet *s)
 		USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
 	} else if (request(s, GET_CONFIGURATION)) {
 		USB_wait_IN();
-		USB_IN_write_byte(usb_configuration);
+		USB_IN_write_byte(usb_current_conf);
 		USB_flush_IN();
 		USB_control_read_complete_status_stage();
 	} else if (request(s, GET_STATUS)) {
@@ -496,7 +412,7 @@ ISR(USB_COM_vect)
         if (bit_is_set(UEINTX, RXSTPI)) {
 		bool all_ok = false;
 		struct setup_packet s;
-		USB_OUT_read_data(&s, 8);
+		USB_OUT_read_buffer(&s, 8);
 		/* acknowledge setup *after* reading, because it clears the bank */
 		USB_ack_SETUP();
 		/* process all Standard Device Requests */

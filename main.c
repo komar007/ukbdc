@@ -7,6 +7,7 @@
 #include <util/delay.h>
 #include <stdbool.h>
 #include "usb_keyboard.h"
+#include "hid.h"
 
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
@@ -88,7 +89,7 @@ void scan_matrix()
 							keyboard_keys[k] = 0;
 					break;
 				}
-				usb_keyboard_send();
+				HID_commit_state();
 			}
 			val >>= 1;
 		}
@@ -115,7 +116,7 @@ int main(void)
 	//_delay_ms(1000);
 	for (int i = 0; i < 30; ++i)
 		keyboard_keys[i] = 0;
-	usb_keyboard_send();
+	HID_commit_state();
 
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */

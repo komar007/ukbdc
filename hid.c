@@ -6,33 +6,41 @@
 uint8_t keyboard_modifier_keys=0;
 
 // which keys are currently pressed, up to 6 keys may be down at once
-uint8_t keyboard_keys[30]={0,0,0,0,0,0};
+uint8_t keyboard_keys[30]={0};
 
 // protocol setting from the host.  We use exactly the same report
 // either way, so this variable only stores the setting since we
 // are required to be able to report which setting is in use.
 static uint8_t keyboard_protocol=0;
 
-// the idle configuration, how often we send the report to the
-// host (ms * 4) even when it hasn't changed
+/* the idle configuration, how often we send the report to the
+ * host (ms * 4) even when it hasn't changed */
 uint8_t keyboard_idle_config=125;
 
-// count until idle timeout
-uint8_t keyboard_idle_count=0;
+/* countdown until idle timeout */
+uint8_t keyboard_idle_countdown=125;
+
+bool keyboard_send_now = false;
 
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
 volatile uint8_t keyboard_leds=0;
 
-bool handle_hid_control_request(struct setup_packet *s)
+void HID_send_report()
+{
+	USB_IN_write_byte(keyboard_modifier_keys);
+	USB_IN_write_byte(0);
+	USB_IN_write_buffer(keyboard_keys, 30);
+}
+
+/* [Callbacks section] */
+
+bool HID_handle_control_request(struct setup_packet *s)
 {
 	if (request_type(s, DIRECTION, DEVICE_TO_HOST)) {
 		USB_wait_IN();
 		switch (s->bRequest) {
 		case HID_GET_REPORT:
-			USB_IN_write_byte(keyboard_modifier_keys);
-			USB_IN_write_byte(0);
-			for (int i=0; i<30; i++)
-				USB_IN_write_byte(keyboard_keys[i]);
+			HID_send_report();
 			break;
 		case HID_GET_IDLE:
 			USB_IN_write_byte(keyboard_idle_config);
@@ -53,7 +61,7 @@ bool handle_hid_control_request(struct setup_packet *s)
 			break;
 		case HID_SET_IDLE:
 			keyboard_idle_config = (s->wValue >> 8);
-			keyboard_idle_count = 0;
+			keyboard_idle_countdown = keyboard_idle_config;
 			break;
 		case HID_SET_PROTOCOL:
 			keyboard_protocol = s->wValue;
@@ -64,3 +72,31 @@ bool handle_hid_control_request(struct setup_packet *s)
 	}
 	return true;
 }
+
+void HID_handle_sof()
+{
+	bool should_send = keyboard_send_now ||
+		(keyboard_idle_config != 0 && keyboard_idle_countdown == 0);
+	if (!should_send)
+		return;
+	USB_set_endpoint(KEYBOARD_ENDPOINT);
+	/* check if sending is possible on interrupt endpoint */
+	if (bit_is_set(UEINTX, RWAL)) {
+		HID_send_report();
+		UEINTX &= ~_BV(FIFOCON);
+		keyboard_send_now = false;
+		keyboard_idle_countdown = keyboard_idle_config;
+	}
+}
+
+/* [/Callbacks section] */
+
+/* [API section] */
+
+/* send the contents of keyboard_keys and keyboard_modifier_keys */
+void HID_commit_state()
+{
+	keyboard_send_now = true;
+}
+
+/* [/API section] */

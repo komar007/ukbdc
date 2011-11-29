@@ -202,3 +202,12 @@ static inline void USB_addr_enable()
 {
 	UDADDR |= _BV(ADDEN);
 }
+
+void USB_OUT_read_buffer(void *ptr, uint8_t len);
+void USB_IN_write_buffer(const void *ptr, uint8_t len);
+void USB_IN_write_buffer_P(const uint8_t *ptr, uint8_t len);
+
+/* High level functions defined in usb_hardware.c
+ * These functions should never be mixed with low level static inlines defined
+ * above. */
+bool USB_write_blob(const void *ptr, uint16_t len, uint16_t ep_size, bool progmem);

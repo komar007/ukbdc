@@ -60,6 +60,11 @@ struct interface_request_handler {
 	bool (*function)(struct setup_packet*);
 };
 
+/* A SOF handler is called each time a SOF comes */
+struct sof_handler {
+	void (*function)();
+};
+
 static inline bool request_type(struct setup_packet *s,
 		uint8_t mask, uint8_t flags)
 {
