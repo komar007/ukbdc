@@ -12,18 +12,18 @@
 #define usb_debug_flush_output()
 
 
-#define KEY_CTRL	0x01
-#define KEY_SHIFT	0x02
-#define KEY_ALT		0x04
-#define KEY_GUI		0x08
-#define KEY_LEFT_CTRL	0x01
-#define KEY_LEFT_SHIFT	0x02
-#define KEY_LEFT_ALT	0x04
-#define KEY_LEFT_GUI	0x08
-#define KEY_RIGHT_CTRL	0x10
-#define KEY_RIGHT_SHIFT	0x20
-#define KEY_RIGHT_ALT	0x40
-#define KEY_RIGHT_GUI	0x80
+#define KEY_CTRL	0xE0
+#define KEY_SHIFT	0xE1
+#define KEY_ALT		0xE2
+#define KEY_GUI		0xE3
+#define KEY_LEFT_CTRL	0xE0
+#define KEY_LEFT_SHIFT	0xE1
+#define KEY_LEFT_ALT	0xE2
+#define KEY_LEFT_GUI	0xE3
+#define KEY_RIGHT_CTRL	0xE4
+#define KEY_RIGHT_SHIFT	0xE5
+#define KEY_RIGHT_ALT	0xE6
+#define KEY_RIGHT_GUI	0xE7
 
 #define KEY_A		4
 #define KEY_B		5

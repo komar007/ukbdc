@@ -53,6 +53,23 @@ bool is_pressed_mod(uint8_t mod)
 	return keyboard_modifier_keys & mod;
 }
 
+bool is_pressed(uint8_t code)
+{
+	uint8_t byte_no = code / 8;
+	uint8_t bit_no = code & 0x07;
+	return key_map[byte_no] & _BV(bit_no);
+}
+
+void save_key(uint8_t code, bool state)
+{
+	uint8_t byte_no = code / 8;
+	uint8_t bit_no = code & 0x07;
+	if (state == false)
+		key_map[byte_no] &= ~_BV(bit_no);
+	else
+		key_map[byte_no] |= _BV(bit_no);
+}
+
 void scan_matrix()
 {
 	for (uint8_t i = 0; i < 8; ++i) {
@@ -67,26 +84,14 @@ void scan_matrix()
 				states[j][i] = state;
 				switch (state) {
 				case true:
-					if (is_modifier(matrix[j][i])) {
-						keyboard_modifier_keys |= code;
-						break;
-					}
-					if (code == KEY_ESC && (is_pressed_mod(KEY_LEFT_SHIFT) || is_pressed_mod(KEY_RIGHT_SHIFT)))
+					if (code == KEY_ESC && (is_pressed(KEY_LEFT_SHIFT) || is_pressed(KEY_RIGHT_SHIFT)))
 						code = KEY_TILDE;
-					for (int k = 0; k < 30; ++k)
-						if (keyboard_keys[k] == 0) {
-							keyboard_keys[k] = code;
-							break;
-						}
+					save_key(code, true);
 					break;
 				case false:
-					if (is_modifier(matrix[j][i])) {
-						keyboard_modifier_keys &= ~code;
-						break;
-					}
-					for (int k = 0; k < 30; ++k)
-						if (keyboard_keys[k] == code || (code == KEY_ESC && keyboard_keys[k] == KEY_TILDE))
-							keyboard_keys[k] = 0;
+					if (code == KEY_ESC)
+						save_key(KEY_TILDE, false);
+					save_key(code, false);
 					break;
 				}
 				HID_commit_state();

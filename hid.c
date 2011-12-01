@@ -25,11 +25,14 @@ bool keyboard_send_now = false;
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
 volatile uint8_t keyboard_leds=0;
 
+uint8_t key_map[32] = {0};
+
 void HID_send_report()
 {
-	USB_IN_write_byte(keyboard_modifier_keys);
+	/*USB_IN_write_byte(keyboard_modifier_keys);
 	USB_IN_write_byte(0);
-	USB_IN_write_buffer(keyboard_keys, 30);
+	USB_IN_write_buffer(keyboard_keys, 30);*/
+	USB_IN_write_buffer(key_map, 32);
 }
 
 /* [Callbacks section] ----------------------------------------------------- */

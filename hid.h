@@ -13,6 +13,8 @@
 extern uint8_t keyboard_modifier_keys;
 extern uint8_t keyboard_keys[30];
 
+extern uint8_t key_map[32];
+
 bool HID_handle_control_request(struct setup_packet*);
 void HID_handle_sof();
 void HID_commit_state();
