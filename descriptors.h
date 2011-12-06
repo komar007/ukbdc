@@ -21,35 +21,42 @@ static uint8_t PROGMEM device_descriptor[] = {
 	0,					// iSerialNumber
 	1					// bNumConfigurations
 };
+/* The following HID descriptors' format is described in
+ * Keyboard Protocol 1, HID 1.11 spec, Appendix B, page 59-60 */
+
+/* This descriptor makes sure no reserved keycodes are send to the host by
+ * putting constant data in all reserved places. For some reason, however, it
+ * doesn't work on Windows. Probably it is a problem with the descriptor, so
+ * it needs reviewing. Below it, is a simpler 256-bit descriptor. */
 /*
-// Keyboard Protocol 1, HID 1.11 spec, Appendix B, page 59-60
 static uint8_t PROGMEM keyboard_hid_report_desc[] = {
         0x05, 0x01,          // Usage Page (Generic Desktop),
         0x09, 0x06,          // Usage (Keyboard),
         0xA1, 0x01,          // Collection (Application),
-        0x95, 0x01,          //   Report Count (1),
         0x75, 0x01,          //   Report Size (1),
+        0x95, 0x01,          //   Report Count (1),
         0x81, 0x03,          //   Input (Constant),                 ; Reserved bit for usage id 00
         0x05, 0x07,          //   Usage Page (Key Codes),
-        0x75, 0x01,          //   Report Size (1),
         0x15, 0x00,          //   Logical Minimum (0),
         0x25, 0x01,          //   Logical Maximum (1),
         0x95, 0xA4,          //   Report Count (164),
         0x19, 0x01,          //   Usage Minimum (1),
         0x29, 0xA4,          //   Usage Maximum (164),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute), ;Modifier byte
+        0x81, 0x02,          //   Input (Data, Variable, Absolute)
         0x95, 0x0B,          //   Report Count (11),
         0x81, 0x03,          //   Input (Constant),                 ; Reserved 11 bits for usage id A5-CF
         0x95, 0x2E,          //   Report Count (46),
         0x19, 0xB0,          //   Usage Minimum (176),
         0x29, 0xDD,          //   Usage Maximum (221),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute), ;Modifier byte
+        0x81, 0x02,          //   Input (Data, Variable, Absolute)
         0x95, 0x02,          //   Report Count (2),
         0x81, 0x03,          //   Input (Constant),                 ; Reserved 2 bits for usage id A5-CF
         0x95, 0x08,          //   Report Count (8),
         0x19, 0xE0,          //   Usage Minimum (224),
         0x29, 0xE7,          //   Usage Maximum (231),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute), ;Modifier byte
+        0x81, 0x02,          //   Input (Data, Variable, Absolute)
+        0x95, 0x18,          //   Report Count (24),
+        0x81, 0x03,          //   Input (Constant),                 ; 24 bits of padding to full 32 bytes
         0x95, 0x05,          //   Report Count (5),
         0x05, 0x08,          //   Usage Page (LEDs),
         0x19, 0x01,          //   Usage Minimum (1),
@@ -60,7 +67,10 @@ static uint8_t PROGMEM keyboard_hid_report_desc[] = {
         0xc0                 // End Collection
 };
 */
-// Keyboard Protocol 1, HID 1.11 spec, Appendix B, page 59-60
+/* Simple 256-bit bitmap HID report descriptor. Bit on position i represents
+ * the state of key number i. This allows for reserved 1-byte keycodes to be
+ * sent to the host, which is not standard-compliant, so care has to be taken
+ * not to set these bits if firmware */
 static uint8_t PROGMEM keyboard_hid_report_desc[] = {
         0x05, 0x01,          // Usage Page (Generic Desktop),
         0x09, 0x06,          // Usage (Keyboard),
@@ -68,8 +78,8 @@ static uint8_t PROGMEM keyboard_hid_report_desc[] = {
         0x75, 0x01,          //   Report Size (1),
         0x96, 0x00,0x01,          //   Report Count (256),
         0x05, 0x07,          //   Usage Page (Key Codes),
-        0x19, 0x00,          //   Usage Minimum (1),
-        0x29, 0xff,          //   Usage Maximum (231),
+        0x19, 0x00,          //   Usage Minimum (0),
+        0x29, 0xff,          //   Usage Maximum (255),
         0x15, 0x00,          //   Logical Minimum (0),
         0x25, 0x01,          //   Logical Maximum (1),
         0x81, 0x02,          //   Input (Data, Variable, Absolute), ;Modifier byte
