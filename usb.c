@@ -72,10 +72,7 @@ ISR(USB_GEN_vect)
         UDINT = 0x00;
         if (device_int_flags & _BV(EORSTI)) {
 		/* on end of reset configure endpoint 0 */
-		USB_configure_endpoint(0,
-				EP_TYPE_CONTROL,
-				EP_SIZE_32 | EP_SINGLE_BUFFER,
-				_BV(RXSTPE));
+		USB_configure_endpoint(0);
 		usb_current_conf = 0;
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
@@ -135,11 +132,11 @@ static inline bool process_standard_device_requests(struct setup_packet *s)
 	} else if (request(s, SET_CONFIGURATION)) {
 		usb_current_conf = s->wValue;
 		USB_control_write_complete_status_stage();
-		USB_configure_endpoint(KEYBOARD_ENDPOINT,
-				EP_TYPE_INTERRUPT_IN,
-				EP_SIZE_32 | EP_DOUBLE_BUFFER,
-				0x00);
-		USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
+		for (uint8_t i = 1; i < NUM_ENDPOINTS; ++i) {
+			if (!USB_configure_endpoint(i))
+				return false;
+			USB_reset_endpoint_fifo(KEYBOARD_ENDPOINT);
+		}
 	} else if (request(s, GET_CONFIGURATION)) {
 		USB_wait_IN();
 		USB_IN_write_byte(usb_current_conf);
@@ -179,7 +176,7 @@ static inline bool process_standard_endpoint_requests(struct setup_packet *s)
 	} else if ((s->bRequest == CLEAR_FEATURE || s->bRequest == SET_FEATURE)
 			&& s->wValue == ENDPOINT_HALT) {
 		int i = s->wIndex & 0x7F;
-		if (i >= 1 && i <= MAX_ENDPOINT) {
+		if (i >= 1 && i < NUM_ENDPOINTS) {
 			USB_control_write_complete_status_stage();
 			USB_set_endpoint(i);
 			if (s->bRequest == SET_FEATURE) {

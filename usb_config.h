@@ -10,6 +10,8 @@
 #define VENDOR_ID		0x16C0
 #define PRODUCT_ID		0x047C
 
+#define NUM_ENDPOINTS		2
+
 #define ENDPOINT0_SIZE		32
 
 /* [/Device configuration section] ------------------------------------------ */
@@ -37,6 +39,7 @@
 
 /* [API section] ----------------------------------------------------------- */
 
+extern struct endpoint_config endpoint_configs[NUM_ENDPOINTS];
 extern struct interface_request_handler iface_req_handlers[];
 extern struct sof_handler sof_handlers[];
 

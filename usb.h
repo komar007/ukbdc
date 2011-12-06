@@ -2,9 +2,6 @@
 
 #include "usb_hardware.h"
 
-/* FIXME: think about it */
-#define MAX_ENDPOINT		4
-
 /* [FLAGS FOR bmRequestType] */
 /* Request direction */
 #define DIRECTION		0x80
@@ -65,6 +62,14 @@ struct interface_request_handler {
 /* A SOF handler is called each time a SOF comes */
 struct sof_handler {
 	void (*f)();
+};
+
+/* A structure which contains endpoint's whole configuration */
+struct endpoint_config {
+	uint8_t num;
+	uint8_t type;
+	uint8_t config;
+	uint8_t int_flags;
 };
 
 static inline bool request_type(struct setup_packet *s,

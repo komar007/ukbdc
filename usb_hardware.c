@@ -1,6 +1,8 @@
 #include <avr/pgmspace.h>
 
 #include "usb_hardware.h"
+#include "usb_config.h"
+#include "usb.h"
 
 void USB_OUT_read_buffer(void *ptr, uint8_t len)
 {
@@ -41,5 +43,22 @@ bool USB_write_blob(const void *ptr, uint16_t len,
 		ptr = (uint8_t*)ptr + packet_len;
 		len -= packet_len;
 	}
+	return true;
+}
+
+bool USB_configure_endpoint(uint8_t num)
+{
+	uint8_t i = 0;
+	for (; i < NUM_ENDPOINTS; ++i)
+		if (endpoint_configs[i].num == num)
+			break;
+	if (i >= NUM_ENDPOINTS)
+		return false;
+	UENUM   = endpoint_configs[i].num;
+	UECONX  = _BV(EPEN);
+	UECFG0X = endpoint_configs[i].type;
+	UECFG1X = endpoint_configs[i].config;
+	/* set interrupt enable bits */
+	UEIENX  = endpoint_configs[i].int_flags;
 	return true;
 }

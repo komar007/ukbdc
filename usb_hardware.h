@@ -113,16 +113,6 @@ static inline void USB_enable()
 #define EP_SIZE_512			0x60
 /* [/FLAGS FOR UECFG1X] */
 
-static inline void USB_configure_endpoint(uint8_t endp_n,
-		uint8_t type, uint8_t config, uint8_t inte)
-{
-	UENUM   = endp_n;
-	UECONX  = _BV(EPEN);
-	UECFG0X = type;
-	UECFG1X = config;
-	/* set interrupt enable bits */
-	UEIENX  = inte;
-}
 static inline void USB_set_endpoint(uint8_t endp_n)
 {
 	UENUM = endp_n;
@@ -208,6 +198,9 @@ static inline void USB_addr_enable()
 {
 	UDADDR |= _BV(ADDEN);
 }
+
+struct endpoint_config;
+bool USB_configure_endpoint(uint8_t num);
 
 void USB_OUT_read_buffer(void *ptr, uint8_t len);
 void USB_IN_write_buffer(const void *ptr, uint8_t len);
