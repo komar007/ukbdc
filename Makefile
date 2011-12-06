@@ -28,4 +28,4 @@ program: firmware.hex
 	sudo dfu-programmer atmega32u4 start
 
 clean:
-	rm -fr *.o firmware Makefile.dep
+	rm -fr *.o firmware.* Makefile.dep
