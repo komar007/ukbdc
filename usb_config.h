@@ -1,6 +1,8 @@
 #pragma once
 
-/* Do not include this file anywhere else than usb.c */
+#include "usb.h"
+
+/* [Device configuration section] ------------------------------------------ */
 
 #define STR_MANUFACTURER	L"komar"
 #define STR_PRODUCT		L"komar board 0.1"
@@ -10,13 +12,32 @@
 
 #define ENDPOINT0_SIZE		32
 
-/* to handler declarations */
-#include "hid.h"
+/* [/Device configuration section] ------------------------------------------ */
 
-struct interface_request_handler iface_req_handlers[] = {
-	{.iface_number = KEYBOARD_INTERFACE, .function = &HID_handle_control_request}
-};
+/* [Inferface configuration section] --------------------------------------- */
 
-struct sof_handler sof_handlers[] = {
-	{.function = &HID_handle_sof}
-};
+/* Keyboard interface */
+#define KEYBOARD_INTERFACE	0
+
+#define KEYBOARD_ENDPOINT	1
+#define KEYBOARD_SIZE		32
+
+/* RAWHID interface */
+#define RAWHID_INTERFACE	1
+
+#define RAWHID_TX_SIZE		64	// transmit packet size
+#define RAWHID_TX_INTERVAL	2	// max # of ms between transmit packets
+#define RAWHID_RX_SIZE		64	// receive packet size
+#define RAWHID_RX_INTERVAL	8	// max # of ms between receive packets
+
+#define RAWHID_TX_ENDPOINT	2
+#define RAWHID_RX_ENDPOINT	3
+
+/* [/Inferface configuration section] -------------------------------------- */
+
+/* [API section] ----------------------------------------------------------- */
+
+extern struct interface_request_handler iface_req_handlers[];
+extern struct sof_handler sof_handlers[];
+
+/* [/API section] ---------------------------------------------------------- */

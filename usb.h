@@ -59,12 +59,12 @@ struct setup_packet {
  * supported */
 struct interface_request_handler {
 	uint16_t iface_number;
-	bool (*function)(struct setup_packet*);
+	bool (*f)(struct setup_packet*);
 };
 
 /* A SOF handler is called each time a SOF comes */
 struct sof_handler {
-	void (*function)();
+	void (*f)();
 };
 
 static inline bool request_type(struct setup_packet *s,

@@ -1,11 +1,6 @@
 #pragma once
 
-#include "usb.h"
-
-#define KEYBOARD_INTERFACE	0
-#define KEYBOARD_ENDPOINT	1
-#define KEYBOARD_SIZE		32
-
+#include "usb_config.h"
 
 #define BOOT_PROTOCOL		0
 #define REPORT_PROTOCOL		1

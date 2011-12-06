@@ -80,8 +80,8 @@ ISR(USB_GEN_vect)
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
 		/* call all SOF handlers */
-		for (uint8_t i = 0; i < ARR_SZ(sof_handlers); ++i)
-			(*sof_handlers[i].function)();
+		for (uint8_t i = 0; sof_handlers[i].f; ++i)
+			(*sof_handlers[i].f)();
 	}
 }
 
@@ -230,9 +230,9 @@ ISR(USB_COM_vect)
 			all_ok = process_standard_endpoint_requests(&s);
 		} else if (request_type(&s, TYPE | RECIPIENT, CLASS    | INTERFACE)) {
 			bool found = false;
-			for (uint8_t i = 0; i < ARR_SZ(iface_req_handlers); ++i) {
+			for (uint8_t i = 0; iface_req_handlers[i].f; ++i) {
 				if (iface_req_handlers[i].iface_number == s.wIndex) {
-					found = (*iface_req_handlers[i].function)(&s);
+					found = (*iface_req_handlers[i].f)(&s);
 					break;
 				}
 			}
