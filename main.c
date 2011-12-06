@@ -72,6 +72,7 @@ void save_key(uint8_t code, bool state)
 
 void scan_matrix()
 {
+	bool changed = false;
 	for (uint8_t i = 0; i < 8; ++i) {
 		PORTD = ~(0x01 << i);
 		_delay_us(10);
@@ -81,6 +82,7 @@ void scan_matrix()
 			uint8_t layer = states[6][7];
 			uint8_t code = scan_codes[layer][matrix[j][i]];
 			if (state != states[j][i]) {
+				changed = true;
 				states[j][i] = state;
 				switch (state) {
 				case true:
@@ -94,11 +96,12 @@ void scan_matrix()
 					save_key(code, false);
 					break;
 				}
-				HID_commit_state();
 			}
 			val >>= 1;
 		}
 	}
+	if (changed)
+		HID_commit_state();
 	PORTD = 0xff;
 }
 
