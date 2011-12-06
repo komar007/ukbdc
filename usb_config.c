@@ -1,6 +1,7 @@
 #include "usb_config.h"
+#include <avr/pgmspace.h>
 
-struct endpoint_config endpoint_configs[NUM_ENDPOINTS] = {
+struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 	{.num = 0,
 		.type = EP_TYPE_CONTROL,
 		.config = EP_SIZE_32 | EP_SINGLE_BUFFER,

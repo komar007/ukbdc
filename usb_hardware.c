@@ -49,16 +49,20 @@ bool USB_write_blob(const void *ptr, uint16_t len,
 bool USB_configure_endpoint(uint8_t num)
 {
 	uint8_t i = 0;
-	for (; i < NUM_ENDPOINTS; ++i)
-		if (endpoint_configs[i].num == num)
+	for (; i < NUM_ENDPOINTS; ++i) {
+		uint8_t cur_num = pgm_read_byte(&endpoint_configs[i]);
+		if (cur_num == num)
 			break;
+	}
 	if (i >= NUM_ENDPOINTS)
 		return false;
-	UENUM   = endpoint_configs[i].num;
+	struct endpoint_config config;
+	*(uint32_t*)&config = pgm_read_dword(&endpoint_configs[i]);
+	UENUM   = config.num;
 	UECONX  = _BV(EPEN);
-	UECFG0X = endpoint_configs[i].type;
-	UECFG1X = endpoint_configs[i].config;
+	UECFG0X = config.type;
+	UECFG1X = config.config;
 	/* set interrupt enable bits */
-	UEIENX  = endpoint_configs[i].int_flags;
+	UEIENX  = config.int_flags;
 	return true;
 }
