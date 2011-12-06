@@ -48,28 +48,6 @@ bool is_modifier(uint8_t key_n)
 	return false;
 }
 
-bool is_pressed_mod(uint8_t mod)
-{
-	return keyboard_modifier_keys & mod;
-}
-
-bool is_pressed(uint8_t code)
-{
-	uint8_t byte_no = code / 8;
-	uint8_t bit_no = code & 0x07;
-	return key_map[byte_no] & _BV(bit_no);
-}
-
-void save_key(uint8_t code, bool state)
-{
-	uint8_t byte_no = code / 8;
-	uint8_t bit_no = code & 0x07;
-	if (state == false)
-		key_map[byte_no] &= ~_BV(bit_no);
-	else
-		key_map[byte_no] |= _BV(bit_no);
-}
-
 void scan_matrix()
 {
 	bool changed = false;
@@ -86,14 +64,14 @@ void scan_matrix()
 				states[j][i] = state;
 				switch (state) {
 				case true:
-					if (code == KEY_ESC && (is_pressed(KEY_LEFT_SHIFT) || is_pressed(KEY_RIGHT_SHIFT)))
+					if (code == KEY_ESC && (HID_scancode_is_pressed(KEY_LEFT_SHIFT) || HID_scancode_is_pressed(KEY_RIGHT_SHIFT)))
 						code = KEY_TILDE;
-					save_key(code, true);
+					HID_set_scancode_state(code, true);
 					break;
 				case false:
 					if (code == KEY_ESC)
-						save_key(KEY_TILDE, false);
-					save_key(code, false);
+						HID_set_scancode_state(KEY_TILDE, false);
+					HID_set_scancode_state(code, false);
 					break;
 				}
 			}
@@ -119,11 +97,6 @@ int main(void)
 	while (USB_get_configuration() == 0)
 		;
 
-	// Wait an extra second for the PC's operating system to load drivers
-	// and do whatever it does to actually be ready for input
-	//_delay_ms(1000);
-	for (int i = 0; i < 30; ++i)
-		keyboard_keys[i] = 0;
 	HID_commit_state();
 
 	TCCR0A = 0x00;

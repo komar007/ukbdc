@@ -10,11 +10,9 @@
 #define BOOT_PROTOCOL		0
 #define REPORT_PROTOCOL		1
 
-extern uint8_t keyboard_modifier_keys;
-extern uint8_t keyboard_keys[30];
-
-extern uint8_t key_map[32];
-
 bool HID_handle_control_request(struct setup_packet*);
 void HID_handle_sof();
+
+bool HID_scancode_is_pressed(uint8_t code);
+void HID_set_scancode_state(uint8_t code, bool state);
 void HID_commit_state();
