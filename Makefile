@@ -1,4 +1,4 @@
-CC=avr-gcc -Os -std=c99 -lm -mmcu=atmega32u4 -g -ggdb
+CC=avr-gcc -Os -std=gnu99 -lm -mmcu=atmega32u4 -g -ggdb
 WARN=-Wall -Wextra
 SOURCES=main.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c
 

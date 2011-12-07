@@ -77,7 +77,7 @@ ISR(USB_GEN_vect)
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
 		/* call all SOF handlers */
-		for (uint8_t i = 0; sof_handlers[i].f; ++i)
+		for (uint8_t i = 0; i < NUM_SOF_HANDLERS; ++i)
 			(*sof_handlers[i].f)();
 	}
 }
@@ -208,42 +208,56 @@ static inline bool process_standard_interface_requests(struct setup_packet *s)
 	return true;
 }
 
-/* This handles only start-of-frame so far */
+/* Processes Class Interface Requests. Returns true on no error, false if the
+ * request couldn't be processed or is not supported. Actual processing is
+ * performed using interface request handlers */
+/* static inline just for size optimization */
+static inline bool process_class_interface_requests(struct setup_packet *s)
+{
+	bool found = false;
+	for (uint8_t i = 0; i < NUM_INTERFACE_REQUEST_HANDLERS; ++i) {
+		if (get_pgm_struct_field(&iface_req_handlers[i], iface_number) == s->wIndex) {
+			found = (*iface_req_handlers[i].f)(s);
+			break;
+		}
+	}
+	if (!found)
+		return false;
+	if (request_type(s, DIRECTION, DEVICE_TO_HOST))
+		USB_control_read_complete_status_stage();
+	else
+		USB_control_write_complete_status_stage();
+	return true;
+}
+
+static inline void handle_setup_packet()
+{
+	bool all_ok = false;
+	struct setup_packet s;
+	USB_OUT_read_buffer(&s, 8);
+	/* acknowledge setup *after* reading, because it clears the bank */
+	USB_ack_SETUP();
+	/* process all Standard Device Requests */
+	if        (request_type(&s, TYPE | RECIPIENT, STANDARD | DEVICE)) {
+		all_ok = process_standard_device_requests(&s);
+	} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | INTERFACE)) {
+		all_ok = process_standard_interface_requests(&s);
+	} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | ENDPOINT)) {
+		all_ok = process_standard_endpoint_requests(&s);
+	} else if (request_type(&s, TYPE | RECIPIENT, CLASS    | INTERFACE)) {
+		all_ok = process_class_interface_requests(&s);
+	}
+	if (!all_ok)
+		USB_stall_endpoint();
+}
+
 ISR(USB_COM_vect)
 {
         USB_set_endpoint(0);
         if (bit_is_set(UEINTX, RXSTPI)) {
-		bool all_ok = false;
-		struct setup_packet s;
-		USB_OUT_read_buffer(&s, 8);
-		/* acknowledge setup *after* reading, because it clears the bank */
-		USB_ack_SETUP();
-		/* process all Standard Device Requests */
-		if        (request_type(&s, TYPE | RECIPIENT, STANDARD | DEVICE)) {
-			all_ok = process_standard_device_requests(&s);
-		} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | INTERFACE)) {
-			all_ok = process_standard_interface_requests(&s);
-		} else if (request_type(&s, TYPE | RECIPIENT, STANDARD | ENDPOINT)) {
-			all_ok = process_standard_endpoint_requests(&s);
-		} else if (request_type(&s, TYPE | RECIPIENT, CLASS    | INTERFACE)) {
-			bool found = false;
-			for (uint8_t i = 0; iface_req_handlers[i].f; ++i) {
-				if (iface_req_handlers[i].iface_number == s.wIndex) {
-					found = (*iface_req_handlers[i].f)(&s);
-					break;
-				}
-			}
-			if (found) {
-				if (request_type(&s, DIRECTION, DEVICE_TO_HOST))
-					USB_control_read_complete_status_stage();
-				else
-					USB_control_write_complete_status_stage();
-				all_ok = true;
-			}
-		}
-		if (!all_ok)
-			USB_stall_endpoint();
+		handle_setup_packet();
 	}
+	//for (uint8_t i = 0; i < NUM_
 }
 
 /* [/Interrupt handlers section] ------------------------------------------- */

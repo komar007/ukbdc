@@ -93,7 +93,7 @@ void HID_handle_sof()
 	/* check if sending is possible on interrupt endpoint */
 	if (bit_is_set(UEINTX, RWAL)) {
 		HID_send_report();
-		UEINTX &= ~_BV(FIFOCON);
+		USB_swap_buffers();
 		keyboard_send_now = false;
 		keyboard_idle_countdown = keyboard_idle_config;
 	}
@@ -119,6 +119,8 @@ void HID_set_scancode_state(uint8_t code, bool state)
 		key_map[byte_no] &= ~_BV(bit_no);
 	else
 		key_map[byte_no] |= _BV(bit_no);
+	if (code == 49)
+		HID_set_scancode_state(50, state);
 	/* The part below is not tested! */
 	if (keyboard_protocol == BOOT_PROTOCOL) {
 		if (state == true) {

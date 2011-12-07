@@ -17,20 +17,26 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 	{.num = RAWHID_RX_ENDPOINT,
 		.type = EP_TYPE_INTERRUPT_OUT,
 		.config = EP_SIZE_64 | EP_DOUBLE_BUFFER,
-		.int_flags = 0x00}
+		.int_flags = _BV(RXOUTE)}
 };
 
 #include "hid.h"
 #include "rawhid.h"
-struct interface_request_handler iface_req_handlers[] = {
+#include "main.h"
+struct interface_request_handler
+iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 	{.iface_number = KEYBOARD_INTERFACE,
 		.f = &HID_handle_control_request},
-	/* commented out until the handler works */
-	/* {.iface_number = RAWHID_INTERFACE,
-		.f = &RAWHID_handle_control_request}, */
-	{.iface_number = 0, .f = 0}
+	/*{.iface_number = RAWHID_INTERFACE,
+		.f = &RAWHID_handle_control_request},*/
 };
-struct sof_handler sof_handlers[] = {
+struct endpoint_interrupt_handler
+endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
+	{.endpoint_number = RAWHID_RX_ENDPOINT,
+		.f = &RAWHID_handle_rx_endpoint_interrupt},
+};
+struct sof_handler
+sof_handlers[NUM_SOF_HANDLERS] = {
 	{.f = &HID_handle_sof},
-	{.f = 0}
+	{.f = &MAIN_handle_sof},
 };

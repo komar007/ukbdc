@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "usb_keyboard.h"
 #include "hid.h"
+#include "rawhid.h"
 
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
@@ -105,6 +106,16 @@ int main(void)
 
 	while (1)
 		;
+}
+
+void MAIN_handle_sof()
+{
+	static int cnt = 0;
+	static char h[64] = "Hello, world\n";
+	if (cnt++ >= 1000) {
+		cnt = 0;
+		//RAWHID_send((uint8_t*)h, 1);
+	}
 }
 
 ISR(TIMER0_OVF_vect)

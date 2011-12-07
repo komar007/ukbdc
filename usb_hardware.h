@@ -188,6 +188,13 @@ static inline void USB_flush_IN()
 	UEINTX &= ~_BV(TXINI);
 }
 
+/* Swap rx/tx buffers in double buffer mode or flush the buffer in isngle
+ * buffer mode */
+static inline void USB_swap_buffers()
+{
+	UEINTX &= ~_BV(FIFOCON);
+}
+
 /* Set device's address */
 static inline void USB_set_addr(uint8_t addr)
 {

@@ -64,6 +64,14 @@ struct sof_handler {
 	void (*f)();
 };
 
+/* An endpoint interrupt handler is called each time there is an interrupt on
+ * the endpoint. The interrupt masks per endpoint are configured in struct
+ * endpoint_config (field int_flags) */
+struct endpoint_interrupt_handler {
+	uint8_t endpoint_number;
+	void (*f)(uint8_t flags);
+};
+
 /* A structure which contains endpoint's whole configuration */
 struct endpoint_config {
 	uint8_t num;

@@ -3,6 +3,7 @@
 #include "usb_hardware.h"
 #include "usb_config.h"
 #include "usb.h"
+#include "aux.h"
 
 void USB_OUT_read_buffer(void *ptr, uint8_t len)
 {
@@ -50,19 +51,17 @@ bool USB_configure_endpoint(uint8_t num)
 {
 	uint8_t i = 0;
 	for (; i < NUM_ENDPOINTS; ++i) {
-		uint8_t cur_num = pgm_read_byte(&endpoint_configs[i]);
+		uint8_t cur_num = get_pgm_struct_field(&endpoint_configs[i], num);
 		if (cur_num == num)
 			break;
 	}
 	if (i >= NUM_ENDPOINTS)
 		return false;
-	struct endpoint_config config;
-	*(uint32_t*)&config = pgm_read_dword(&endpoint_configs[i]);
-	UENUM   = config.num;
+	UENUM   = get_pgm_struct_field(&endpoint_configs[i], num);
 	UECONX  = _BV(EPEN);
-	UECFG0X = config.type;
-	UECFG1X = config.config;
+	UECFG0X = get_pgm_struct_field(&endpoint_configs[i], type);
+	UECFG1X = get_pgm_struct_field(&endpoint_configs[i], config);
 	/* set interrupt enable bits */
-	UEIENX  = config.int_flags;
+	UEIENX  = get_pgm_struct_field(&endpoint_configs[i], int_flags);
 	return true;
 }
