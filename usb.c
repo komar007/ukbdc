@@ -216,7 +216,7 @@ static inline bool process_class_interface_requests(struct setup_packet *s)
 {
 	bool found = false;
 	for (uint8_t i = 0; i < NUM_INTERFACE_REQUEST_HANDLERS; ++i) {
-		if (get_pgm_struct_field(&iface_req_handlers[i], iface_number) == s->wIndex) {
+		if (get_pgm_struct_field(&iface_req_handlers[i], iface_num) == s->wIndex) {
 			found = (*iface_req_handlers[i].f)(s);
 			break;
 		}
@@ -251,13 +251,23 @@ static inline void handle_setup_packet()
 		USB_stall_endpoint();
 }
 
+#define ENDPOINT_EVENTS (_BV(RXOUTI) | _BV(TXINI) | _BV(STALLEDI) | _BV(NAKOUTI) | _BV(NAKINI))
 ISR(USB_COM_vect)
 {
         USB_set_endpoint(0);
         if (bit_is_set(UEINTX, RXSTPI)) {
 		handle_setup_packet();
 	}
-	//for (uint8_t i = 0; i < NUM_
+	for (uint8_t i = 0; i < NUM_ENDPOINT_INTERRUPT_HANDLERS; ++i) {
+		uint8_t endpoint_number = get_pgm_struct_field(
+				&endpoint_int_handlers[i], endpoint_num);
+		USB_set_endpoint(endpoint_number);
+		if (UEINTX & ENDPOINT_EVENTS) {
+			void (*fun)(uint8_t flags) = get_pgm_struct_field(
+					&endpoint_int_handlers[i], f);
+			(*fun)(UEINTX);
+		}
+	}
 }
 
 /* [/Interrupt handlers section] ------------------------------------------- */

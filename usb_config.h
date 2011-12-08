@@ -42,13 +42,13 @@
 
 /* [API section] ----------------------------------------------------------- */
 
-#define NUM_INTERFACE_REQUEST_HANDLERS		1
+#define NUM_INTERFACE_REQUEST_HANDLERS		2
 #define NUM_ENDPOINT_INTERRUPT_HANDLERS		1
 #define NUM_SOF_HANDLERS			2
 
 extern struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];
 extern struct interface_request_handler iface_req_handlers[];
-extern struct endpoint_interrupt_handler endpoint_int_handlers[];
+extern struct endpoint_interrupt_handler PROGMEM endpoint_int_handlers[];
 extern struct sof_handler sof_handlers[];
 
 /* [/API section] ---------------------------------------------------------- */

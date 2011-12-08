@@ -55,7 +55,7 @@ struct setup_packet {
  * request was processed or false if there was an error or the request is not
  * supported */
 struct interface_request_handler {
-	uint16_t iface_number;
+	uint16_t iface_num;
 	bool (*f)(struct setup_packet*);
 };
 
@@ -68,7 +68,7 @@ struct sof_handler {
  * the endpoint. The interrupt masks per endpoint are configured in struct
  * endpoint_config (field int_flags) */
 struct endpoint_interrupt_handler {
-	uint8_t endpoint_number;
+	uint8_t endpoint_num;
 	void (*f)(uint8_t flags);
 };
 

@@ -25,14 +25,14 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 #include "main.h"
 struct interface_request_handler
 iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
-	{.iface_number = KEYBOARD_INTERFACE,
+	{.iface_num = KEYBOARD_INTERFACE,
 		.f = &HID_handle_control_request},
-	/*{.iface_number = RAWHID_INTERFACE,
-		.f = &RAWHID_handle_control_request},*/
+	{.iface_num = RAWHID_INTERFACE,
+		.f = &RAWHID_handle_control_request}
 };
-struct endpoint_interrupt_handler
+struct endpoint_interrupt_handler PROGMEM
 endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
-	{.endpoint_number = RAWHID_RX_ENDPOINT,
+	{.endpoint_num = RAWHID_RX_ENDPOINT,
 		.f = &RAWHID_handle_rx_endpoint_interrupt},
 };
 struct sof_handler
