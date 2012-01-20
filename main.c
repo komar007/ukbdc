@@ -1,14 +1,15 @@
-#define F_CPU 16000000
-
+#include "platforms.h"
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/power.h>
 #include <util/delay.h>
 #include <stdbool.h>
+
 #include "usb_keyboard.h"
 #include "hid.h"
 #include "rawhid.h"
+#include "dataflash.h"
 
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
@@ -90,6 +91,11 @@ int main(void)
 	/* PORTB - input, pull up */
 	PORTB = 0xff;
 	DDRB  = 0x00;
+
+#ifdef PLATFORM_alpha
+	DDRB |= _BV(PB2) | _BV(PB1) | _BV(PB0);
+	PORTB &= ~(_BV(PB1) | _BV(PB3));
+#endif
 	/* PORTD - output */
 	PORTD = 0xff;
 	DDRD = 0xff;
@@ -99,13 +105,17 @@ int main(void)
 		;
 
 	HID_commit_state();
+	uint8_t buf[518] = {0};
+
+#ifdef PLATFORM_alpha
+	DATAFLASH_read_page(0, buf);
+#endif
 
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
-	uint8_t buf[RAWHID_RX_SIZE] = "ala ma kota\n";
 	while(1) {
-		RAWHID_recv(buf);
+		//RAWHID_recv(buf);
 		RAWHID_send(buf);
 		_delay_us(500);
 	}
@@ -124,7 +134,9 @@ ISR(TIMER0_OVF_vect)
 	static uint8_t num = 0;
 	if (num > 16) {
 		num = 0;
+#ifdef PLATFORM_ikea
 		scan_matrix();
+#endif
 	} else {
 		++num;
 	}
