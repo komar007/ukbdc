@@ -2,33 +2,18 @@
 
 #include <avr/interrupt.h>
 
-// send a packet, with timeout
-int8_t RAWHID_send(const uint8_t *buffer, uint8_t timeout)
-{
-	uint8_t intr_state;
+uint8_t rawhid_rx_buffer[RAWHID_RX_SIZE];
 
-	// if we're not online (enumerated and configured), error
-	if (!USB_get_configuration()) return -1;
-	intr_state = SREG;
-	cli();
-	uint8_t tx_timeout_count = timeout;
-	UENUM = RAWHID_TX_ENDPOINT;
-	// wait for the FIFO to be ready to accept data
-	while (1) {
-		if (UEINTX & (1<<RWAL)) break;
-		SREG = intr_state;
-		if (tx_timeout_count == 0) return 0;
-		if (!USB_get_configuration()) return -1;
-		intr_state = SREG;
-		cli();
-		UENUM = RAWHID_TX_ENDPOINT;
-	}
-	for (uint8_t i = 0; i < RAWHID_TX_SIZE; ++i)
-		UEDATX = *buffer++;
-	// transmit it now
-	UEINTX = 0x3A;
-	SREG = intr_state;
-	return RAWHID_TX_SIZE;
+bool RAWHID_send(const uint8_t *buffer)
+{
+	if (!USB_get_configuration())
+		return false;
+	USB_set_endpoint(RAWHID_TX_ENDPOINT);
+	if (bit_is_clear(UEINTX, TXINI))
+		return false;
+	USB_IN_write_buffer(buffer, RAWHID_TX_SIZE);
+	USB_flush_IN();
+	return true;
 }
 
 bool RAWHID_handle_control_request(struct setup_packet *s)
@@ -58,7 +43,7 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 			n = len < ENDPOINT0_SIZE ? len : ENDPOINT0_SIZE;
 			USB_wait_OUT();
 			// ignore incoming bytes
-			USB_ack_OUT();
+			USB_flush_OUT();
 			len -= n;
 		} while (len);
 		USB_wait_IN();
@@ -70,8 +55,8 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 
 void RAWHID_handle_rx_endpoint_interrupt(uint8_t flags)
 {
-	/*USB_ack_OUT();
-	for (uint8_t i = 0; i < RAWHID_RX_SIZE; ++i)
-		;
-		*/
+	if (flags & _BV(RXOUTI)) {
+		USB_OUT_read_buffer(rawhid_rx_buffer, RAWHID_RX_SIZE);
+		USB_flush_OUT();
+	}
 }

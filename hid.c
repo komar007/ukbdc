@@ -67,7 +67,7 @@ bool HID_handle_control_request(struct setup_packet *s)
 		case HID_SET_REPORT:
 			USB_wait_OUT();
 			keyboard_leds = USB_OUT_read_byte();
-			USB_ack_OUT();
+			USB_flush_OUT();
 			break;
 		case HID_SET_IDLE:
 			keyboard_idle_config = (s->wValue >> 8);
@@ -85,18 +85,21 @@ bool HID_handle_control_request(struct setup_packet *s)
 
 void HID_handle_sof()
 {
+	if (!USB_get_configuration())
+		return;
 	bool should_send = keyboard_send_now ||
 		(keyboard_idle_config != 0 && keyboard_idle_countdown == 0);
 	if (!should_send)
 		return;
 	USB_set_endpoint(KEYBOARD_ENDPOINT);
-	/* check if sending is possible on interrupt endpoint */
-	if (bit_is_set(UEINTX, RWAL)) {
-		HID_send_report();
-		USB_swap_buffers();
-		keyboard_send_now = false;
-		keyboard_idle_countdown = keyboard_idle_config;
-	}
+	/* substitute data to be sent with new version if last buffer has not
+	 * been sent */
+	if (!USB_IN_ready())
+		USB_kill_banks();
+	HID_send_report();
+	USB_flush_IN();
+	keyboard_send_now = false;
+	keyboard_idle_countdown = keyboard_idle_config;
 }
 
 /* [/Callbacks section] ---------------------------------------------------- */

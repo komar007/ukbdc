@@ -102,7 +102,7 @@ static inline void USB_control_read_complete_status_stage()
 	/* wait for Zero Length Packet from host */
 	USB_wait_OUT();
 	/* acknowledge it */
-	USB_ack_OUT();
+	USB_flush_OUT();
 }
 
 void USB_init();

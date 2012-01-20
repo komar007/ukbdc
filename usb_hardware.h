@@ -117,6 +117,10 @@ static inline void USB_set_endpoint(uint8_t endp_n)
 {
 	UENUM = endp_n;
 }
+static inline uint8_t USB_get_endpoint()
+{
+	return UENUM;
+}
 static inline void USB_reset_endpoint_fifo(uint8_t endp_n)
 {
 	UERST = _BV(endp_n);
@@ -142,6 +146,11 @@ static inline void USB_ack_SETUP()
 	UEINTX &= ~_BV(RXSTPI);
 }
 
+/* Check if data can be read from an OUT buffer */
+static inline bool USB_OUT_ready()
+{
+	return bit_is_set(UEINTX, RXOUTI);
+}
 /* Wait until OUT transaction data is received from host and ready in buffer */
 static inline void USB_wait_OUT()
 {
@@ -159,12 +168,20 @@ static inline uint16_t USB_OUT_read_word()
 	uint8_t low_byte = UEDATX;
 	return (UEDATX << 8) | low_byte;
 }
-/* Acknowledge OUT transaction (after reading with USB_OUT_read_*) */
-static inline void USB_ack_OUT()
+/* Flush an OUT transaction buffer (after reading with USB_OUT_read_*) */
+static inline void USB_flush_OUT()
 {
 	UEINTX &= ~_BV(RXOUTI);
+	/* This is required in non-control transactions, but has no effect in
+	 * control transactions */
+	UEINTX &= ~_BV(FIFOCON);
 }
 
+/* Check if data can be written to an IN buffer */
+static inline bool USB_IN_ready()
+{
+	return bit_is_set(UEINTX, TXINI);
+}
 /* Wait until IN transaction can be started with the host (wait for IN token) */
 static inline void USB_wait_IN()
 {
@@ -182,17 +199,23 @@ static inline void USB_IN_write_word(uint8_t word)
 	UEDATX = (uint8_t)(word & 0x00ff);
 	UEDATX = (uint8_t)(word >> 8);
 }
-/* Flush an IN transaction (after writing with USB_IN_write_*) */
+/* Flush an IN transaction buffer (after writing with USB_IN_write_*) */
 static inline void USB_flush_IN()
 {
 	UEINTX &= ~_BV(TXINI);
+	/* This is required in non-control transactions, but has no effect in
+	 * control transactions */
+	UEINTX &= ~_BV(FIFOCON);
 }
 
-/* Swap rx/tx buffers in double buffer mode or flush the buffer in isngle
- * buffer mode */
-static inline void USB_swap_buffers()
+#define KILLBK RXOUTI
+static inline void USB_kill_banks()
 {
-	UEINTX &= ~_BV(FIFOCON);
+	while (bit_is_set(UESTA0X, NBUSYBK1) || bit_is_set(UESTA0X, NBUSYBK0)) {
+		UEINTX |= _BV(KILLBK);
+		while (bit_is_set(UEINTX, KILLBK))
+			;
+	}
 }
 
 /* Set device's address */

@@ -32,10 +32,14 @@ bool USB_write_blob(const void *ptr, uint16_t len,
 			;
 		if (bit_is_set(UEINTX, RXOUTI)) {
 			/* received OUT ZLP (abort) */
-			USB_ack_OUT();
+			USB_flush_OUT();
 			return false;
 		}
-		uint16_t packet_len = len <= ep_size ? len : ep_size;
+		uint16_t packet_len = 0;
+		if (len <= ep_size)
+			packet_len = len;
+		else
+			packet_len = ep_size;
 		if (progmem)
 			USB_IN_write_buffer_P(ptr, packet_len);
 		else

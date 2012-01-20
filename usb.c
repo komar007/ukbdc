@@ -67,6 +67,7 @@ uint8_t USB_get_configuration()
  * This currently handles USB End Of Reset and Start Of Frame */
 ISR(USB_GEN_vect)
 {
+	uint8_t prev_endp = USB_get_endpoint();
         uint8_t device_int_flags = UDINT;
 	/* clear all device interrupt flags */
         UDINT = 0x00;
@@ -74,12 +75,15 @@ ISR(USB_GEN_vect)
 		/* on end of reset configure endpoint 0 */
 		USB_configure_endpoint(0);
 		usb_current_conf = 0;
+		goto end;
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
 		/* call all SOF handlers */
 		for (uint8_t i = 0; i < NUM_SOF_HANDLERS; ++i)
 			(*sof_handlers[i].f)();
 	}
+end:
+	USB_set_endpoint(prev_endp);
 }
 
 
@@ -111,10 +115,13 @@ static void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLen
 		desc_length = pgm_read_byte(list);
 		break;
 	}
-	uint8_t len = (wLength < 256) ? wLength : 255;
-	bool status = USB_write_blob(desc_addr, len, ENDPOINT0_SIZE, true);
+	/* enable interrupts to handle reset in the middle of sending a
+	 * descriptor during enumeration */
+	sei();
+	bool status = USB_write_blob(desc_addr, wLength, ENDPOINT0_SIZE, true);
 	if (status)
 		USB_control_read_complete_status_stage();
+	cli();
 }
 
 /* Processes Standard Device Requests. Returns true on no error, false if the
@@ -254,9 +261,11 @@ static inline void handle_setup_packet()
 #define ENDPOINT_EVENTS (_BV(RXOUTI) | _BV(TXINI) | _BV(STALLEDI) | _BV(NAKOUTI) | _BV(NAKINI))
 ISR(USB_COM_vect)
 {
+	uint8_t prev_endp = USB_get_endpoint();
         USB_set_endpoint(0);
         if (bit_is_set(UEINTX, RXSTPI)) {
 		handle_setup_packet();
+		goto end;
 	}
 	for (uint8_t i = 0; i < NUM_ENDPOINT_INTERRUPT_HANDLERS; ++i) {
 		uint8_t endpoint_number = get_pgm_struct_field(
@@ -268,6 +277,8 @@ ISR(USB_COM_vect)
 			(*fun)(UEINTX);
 		}
 	}
+end:
+	USB_set_endpoint(prev_endp);
 }
 
 /* [/Interrupt handlers section] ------------------------------------------- */

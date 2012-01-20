@@ -1,4 +1,4 @@
-#define F_CPU 2000000
+#define F_CPU 16000000
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -86,7 +86,7 @@ void scan_matrix()
 
 int main(void)
 {
-	clock_prescale_set(clock_div_8);
+	clock_prescale_set(clock_div_1);
 	/* PORTB - input, pull up */
 	PORTB = 0xff;
 	DDRB  = 0x00;
@@ -103,6 +103,9 @@ int main(void)
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
+	while(1) {
+		RAWHID_send(rawhid_rx_buffer);
+	}
 
 	while (1)
 		;
@@ -110,12 +113,6 @@ int main(void)
 
 void MAIN_handle_sof()
 {
-	static int cnt = 0;
-	static char h[64] = "Hello, world\n";
-	if (cnt++ >= 1000) {
-		cnt = 0;
-		//RAWHID_send((uint8_t*)h, 1);
-	}
 }
 
 ISR(TIMER0_OVF_vect)
