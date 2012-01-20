@@ -103,8 +103,11 @@ int main(void)
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
+	uint8_t buf[RAWHID_RX_SIZE] = "ala ma kota\n";
 	while(1) {
-		RAWHID_send(rawhid_rx_buffer);
+		RAWHID_recv(buf);
+		RAWHID_send(buf);
+		_delay_us(500);
 	}
 
 	while (1)
@@ -117,13 +120,15 @@ void MAIN_handle_sof()
 
 ISR(TIMER0_OVF_vect)
 {
+	uint8_t prev_endp = USB_get_endpoint();
 	static uint8_t num = 0;
-	if (num > 1) {
+	if (num > 16) {
 		num = 0;
 		scan_matrix();
 	} else {
 		++num;
 	}
+	USB_set_endpoint(prev_endp);
 }
 
 

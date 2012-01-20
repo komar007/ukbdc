@@ -32,8 +32,6 @@ iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 };
 struct endpoint_interrupt_handler PROGMEM
 endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
-	{.endpoint_num = RAWHID_RX_ENDPOINT,
-		.f = &RAWHID_handle_rx_endpoint_interrupt},
 };
 struct sof_handler
 sof_handlers[NUM_SOF_HANDLERS] = {

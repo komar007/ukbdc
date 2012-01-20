@@ -2,19 +2,30 @@
 
 #include <avr/interrupt.h>
 
-uint8_t rawhid_rx_buffer[RAWHID_RX_SIZE];
-
 bool RAWHID_send(const uint8_t *buffer)
 {
 	if (!USB_get_configuration())
 		return false;
 	USB_set_endpoint(RAWHID_TX_ENDPOINT);
-	if (bit_is_clear(UEINTX, TXINI))
+	if (!USB_IN_ready())
 		return false;
 	USB_IN_write_buffer(buffer, RAWHID_TX_SIZE);
 	USB_flush_IN();
 	return true;
 }
+
+bool RAWHID_recv(uint8_t *buffer)
+{
+	if (!USB_get_configuration())
+		return false;
+	USB_set_endpoint(RAWHID_RX_ENDPOINT);
+	if (!USB_OUT_ready())
+		return false;
+	USB_OUT_read_buffer(buffer, RAWHID_RX_SIZE);
+	USB_flush_OUT();
+	return true;
+}
+
 
 bool RAWHID_handle_control_request(struct setup_packet *s)
 {
@@ -50,13 +61,4 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 		USB_flush_IN();
 	}
 	return true;
-}
-
-
-void RAWHID_handle_rx_endpoint_interrupt(uint8_t flags)
-{
-	if (flags & _BV(RXOUTI)) {
-		USB_OUT_read_buffer(rawhid_rx_buffer, RAWHID_RX_SIZE);
-		USB_flush_OUT();
-	}
 }
