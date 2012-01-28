@@ -14,4 +14,13 @@
 	#define DATAFLASH_CLK_HIGH()	PORTB |= _BV(PB1)
 	#define DATAFLASH_CLK_LOW()	PORTB &= ~_BV(PB1)
 	#define DATAFLASH_SO_STATE()	((PINB >> PB3) & 0x01)
+
+	#define HC595_BUFEN_SET()	PORTC &= ~_BV(PC6)
+	#define HC595_BUFEN_CLEAR()	PORTC |= ~_BV(PC6)
+	#define HC595_SER_HIGH()	PORTB |= _BV(PB2)
+	#define HC595_SER_LOW()		PORTB &= ~_BV(PB2)
+	#define HC595_CLK_HIGH()	PORTB |= _BV(PB1)
+	#define HC595_CLK_LOW()		PORTB &= ~_BV(PB1)
+	#define HC595_LATCH_HIGH()	PORTC |= _BV(PC7)
+	#define HC595_LATCH_LOW()	PORTC &= ~_BV(PC7)
 #endif
