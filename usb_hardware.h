@@ -88,6 +88,17 @@ static inline void USB_enable()
 #endif
 }
 
+static inline void USB_disable()
+{
+#if defined(__AVR_AT90USB162__)
+	/* USB macro disable */
+	USBCON &= ~_BV(USBE);
+#else
+	/* USB macro disable and pad disable */
+	USBCON &= ~(_BV(USBE) | _BV(OTGPADE));
+#endif
+}
+
 /* [FLAGS FOR UECFG0X] */
 /* Endpoint types and dirs (according to atmel specification) */
 #define EP_TYPE_CONTROL			0x00

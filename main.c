@@ -105,7 +105,7 @@ int main(void)
 		;
 
 	HID_commit_state();
-	uint8_t buf[518] = {0};
+	uint8_t buf[518] = "kupka kupka\n";
 
 #ifdef PLATFORM_alpha
 	DATAFLASH_read_page(0, buf);
@@ -115,9 +115,9 @@ int main(void)
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
-		//RAWHID_recv(buf);
+		RAWHID_task();
 		RAWHID_send(buf);
-		_delay_us(500);
+		_delay_ms(5);
 	}
 
 	while (1)

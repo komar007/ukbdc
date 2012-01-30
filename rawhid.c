@@ -6,11 +6,16 @@ bool RAWHID_send(const uint8_t *buffer)
 {
 	if (!USB_get_configuration())
 		return false;
+	uint8_t sreg = SREG;
+	cli();
 	USB_set_endpoint(RAWHID_TX_ENDPOINT);
-	if (!USB_IN_ready())
+	if (!USB_IN_ready()) {
+		SREG = sreg;
 		return false;
-	USB_IN_write_buffer(buffer, RAWHID_TX_SIZE);
+	}
+	USB_IN_write_buffer(buffer, RAWHID_SIZE);
 	USB_flush_IN();
+	SREG = sreg;
 	return true;
 }
 
@@ -18,11 +23,16 @@ bool RAWHID_recv(uint8_t *buffer)
 {
 	if (!USB_get_configuration())
 		return false;
+	uint8_t sreg = SREG;
+	cli();
 	USB_set_endpoint(RAWHID_RX_ENDPOINT);
-	if (!USB_OUT_ready())
+	if (!USB_OUT_ready()) {
+		SREG = sreg;
 		return false;
-	USB_OUT_read_buffer(buffer, RAWHID_RX_SIZE);
+	}
+	USB_OUT_read_buffer(buffer, RAWHID_SIZE);
 	USB_flush_OUT();
+	SREG = sreg;
 	return true;
 }
 
@@ -31,7 +41,7 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 {
 	uint8_t i, len, n;
 	if (s->bmRequestType == 0xA1 && s->bRequest == HID_GET_REPORT) {
-		len = RAWHID_TX_SIZE;
+		len = RAWHID_SIZE;
 		do {
 			// wait for host ready for IN packet
 			do {
@@ -49,7 +59,7 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 		} while (len || n == ENDPOINT0_SIZE);
 	}
 	if (s->bmRequestType == 0x21 && s->bRequest == HID_SET_REPORT) {
-		len = RAWHID_RX_SIZE;
+		len = RAWHID_SIZE;
 		do {
 			n = len < ENDPOINT0_SIZE ? len : ENDPOINT0_SIZE;
 			USB_wait_OUT();

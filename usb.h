@@ -106,4 +106,5 @@ static inline void USB_control_read_complete_status_stage()
 }
 
 void USB_init();
+void USB_close();
 uint8_t USB_get_configuration();

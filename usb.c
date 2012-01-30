@@ -52,6 +52,16 @@ void USB_init()
 	sei();
 }
 
+/* deinitialize USB */
+void USB_close()
+{
+        UDIEN &= ~(_BV(EORSTE) | _BV(SOFE));
+	usb_current_conf = 0;
+	UDCON |= _BV(DETACH) | _BV(LSM);
+        USB_disable();
+	USB_set_pads_regulator(false);
+}
+
 /* return 0 if the USB is not configured, or the configuration number
  * selected by the HOST */
 uint8_t USB_get_configuration()
