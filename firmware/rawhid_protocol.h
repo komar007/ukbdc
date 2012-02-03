@@ -10,4 +10,4 @@ struct RAWHID_packet {
 	uint8_t payload[RAWHID_SIZE - 1];
 };
 
-void RAWHID_task();
+void RAWHID_PROTOCOL_task();

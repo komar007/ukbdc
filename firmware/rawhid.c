@@ -2,41 +2,7 @@
 
 #include <avr/interrupt.h>
 
-bool RAWHID_send(const void *buffer)
-{
-	if (!USB_get_configuration())
-		return false;
-	uint8_t sreg = SREG;
-	cli();
-	USB_set_endpoint(RAWHID_TX_ENDPOINT);
-	if (!USB_IN_ready()) {
-		SREG = sreg;
-		return false;
-	}
-	USB_IN_write_buffer(buffer, RAWHID_SIZE);
-	USB_flush_IN();
-	SREG = sreg;
-	return true;
-}
-
-bool RAWHID_recv(void *buffer)
-{
-	if (!USB_get_configuration())
-		return false;
-	uint8_t sreg = SREG;
-	cli();
-	USB_set_endpoint(RAWHID_RX_ENDPOINT);
-	if (!USB_OUT_ready()) {
-		SREG = sreg;
-		return false;
-	}
-	USB_OUT_read_buffer(buffer, RAWHID_SIZE);
-	USB_flush_OUT();
-	SREG = sreg;
-	return true;
-}
-
-
+/* [Callbacks section] ----------------------------------------------------- */
 bool RAWHID_handle_control_request(struct setup_packet *s)
 {
 	uint8_t i, len, n;
@@ -72,3 +38,40 @@ bool RAWHID_handle_control_request(struct setup_packet *s)
 	}
 	return true;
 }
+/* [/Callbacks section] ---------------------------------------------------- */
+
+/* [API section] ----------------------------------------------------------- */
+bool RAWHID_send(const void *buffer)
+{
+	if (!USB_get_configuration())
+		return false;
+	uint8_t sreg = SREG;
+	cli();
+	USB_set_endpoint(RAWHID_TX_ENDPOINT);
+	if (!USB_IN_ready()) {
+		SREG = sreg;
+		return false;
+	}
+	USB_IN_write_buffer(buffer, RAWHID_SIZE);
+	USB_flush_IN();
+	SREG = sreg;
+	return true;
+}
+
+bool RAWHID_recv(void *buffer)
+{
+	if (!USB_get_configuration())
+		return false;
+	uint8_t sreg = SREG;
+	cli();
+	USB_set_endpoint(RAWHID_RX_ENDPOINT);
+	if (!USB_OUT_ready()) {
+		SREG = sreg;
+		return false;
+	}
+	USB_OUT_read_buffer(buffer, RAWHID_SIZE);
+	USB_flush_OUT();
+	SREG = sreg;
+	return true;
+}
+/* [/API section] ---------------------------------------------------------- */

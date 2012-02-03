@@ -17,7 +17,7 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 	{.num = RAWHID_RX_ENDPOINT,
 		.type = EP_TYPE_INTERRUPT_OUT,
 		.config = EP_SIZE_64 | EP_DOUBLE_BUFFER,
-		.int_flags = _BV(RXOUTE)}
+		.int_flags = 0x00}
 };
 
 #include "hid.h"

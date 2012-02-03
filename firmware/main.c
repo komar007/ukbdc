@@ -127,7 +127,7 @@ int main(void)
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
-		RAWHID_task();
+		RAWHID_PROTOCOL_task();
 		RAWHID_send(buf);
 		_delay_ms(5);
 	}

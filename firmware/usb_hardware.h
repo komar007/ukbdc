@@ -4,9 +4,9 @@
  * connected with the USB standard */
 #pragma once
 
+#include <avr/io.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <avr/io.h>
 
 /* #define CLOCK_8MHZ  for USB operation from 8MHz  crystal */
 /* #define CLOCK_16MHZ for USB operation from 16MHz crystal */
@@ -38,6 +38,7 @@ enum crystal_config {
 	CRYSTAL_16MHZ,
 	CRYSTAL_8MHZ
 };
+/* Setup USB PLL */
 static inline void USB_pll_config(enum crystal_config crystal)
 {
 	switch (crystal) {
@@ -73,6 +74,7 @@ static inline void USB_pll_config(enum crystal_config crystal)
 	PLLCSR |= _BV(PLLE);
 }
 
+/* Start the USB controller */
 static inline void USB_enable()
 {
 #if defined(__AVR_AT90USB162__)
@@ -88,6 +90,7 @@ static inline void USB_enable()
 #endif
 }
 
+/* Stop the USB controller */
 static inline void USB_disable()
 {
 #if defined(__AVR_AT90USB162__)
@@ -228,6 +231,7 @@ static inline void USB_kill_banks()
 			;
 	}
 }
+#undef KILLBK
 
 /* Set device's address */
 static inline void USB_set_addr(uint8_t addr)

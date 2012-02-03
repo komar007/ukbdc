@@ -6,8 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* UKBDC RAWHID PROTOCOL
+/* UKBDC RAWHID PROTOCOL - draft
  * =====================
+ *
+ * Note: this is the documentation of the new protocol (in progress).
+ * This file implements the old protocol!
  *
  * ukbdc uses a rawhid based asynchronous protocol to support configuration of
  * the keyboard using PC-side software.
@@ -54,8 +57,8 @@
  *  Device to Host:
  */
 
-
-void RAWHID_task()
+/* FIXME: Temporary ugly code! */
+void RAWHID_PROTOCOL_task()
 {
 	struct RAWHID_packet buf;
 	if (RAWHID_recv(&buf)) {
