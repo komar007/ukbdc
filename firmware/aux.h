@@ -6,6 +6,8 @@
 
 #define offsetof(type, member)  __builtin_offsetof (type, member)
 
+/* Macro used to read a struct field from program memory (supported field
+ * sizes: 1, 2 and 4 bytes) */
 #define get_pgm_struct_field(addr, field) ( \
 	(sizeof(((typeof(*(addr))*)0)->field) == 1) ? \
 		pgm_read_byte((uint8_t*)(addr) + offsetof(typeof(*(addr)), field)) \

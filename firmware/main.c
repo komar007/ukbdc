@@ -119,7 +119,7 @@ int main(void)
 #endif
 
 	uint8_t *layout = malloc(sizeof(scan_codes));
-	for (int i = 0; i < sizeof(scan_codes); ++i)
+	for (unsigned i = 0; i < sizeof(scan_codes); ++i)
 		layout[i] = pgm_read_byte((void*)scan_codes+i);
 	LAYOUT_set(layout);
 

@@ -1,35 +1,10 @@
-/* USB Keyboard Example for Teensy USB Development Board
- * http://www.pjrc.com/teensy/usb_keyboard.html
- * Copyright (c) 2009 PJRC.COM, LLC
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 #include "aux.h"
 #include "usb.h"
 #include "usb_config.h"
+#include "descriptors.h"
 
 #include <stdint.h>
 #include <avr/interrupt.h>
-
-#include "descriptors.h"
-
 
 /* current USB configuration chosen by host (0 means no config chosen yet) */
 static volatile uint8_t usb_current_conf = 0;
@@ -96,7 +71,8 @@ end:
 	USB_set_endpoint(prev_endp);
 }
 
-
+/* FIXME: This code comes from the Teensy hid keyboard example and is
+ * absolutely horrible and needs a complete rewrite */
 static void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
 {
 	const uint8_t *list;
@@ -127,11 +103,12 @@ static void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLen
 	}
 	/* enable interrupts to handle reset in the middle of sending a
 	 * descriptor during enumeration */
+	uint8_t sreg = SREG;
 	sei();
 	bool status = USB_write_blob(desc_addr, wLength, ENDPOINT0_SIZE, true);
 	if (status)
 		USB_control_read_complete_status_stage();
-	cli();
+	SREG = sreg;
 }
 
 /* Processes Standard Device Requests. Returns true on no error, false if the
@@ -178,21 +155,17 @@ static inline bool process_standard_device_requests(struct setup_packet *s)
 /* static inline just for size optimization */
 static inline bool process_standard_endpoint_requests(struct setup_packet *s)
 {
-	if (s->bRequest == GET_STATUS) {
+	if (request(s, GET_STATUS)) {
 		USB_wait_IN();
-		int status;
 		USB_set_endpoint(s->wIndex);
-		if (USB_endpoint_stalled())
-			status = 1;
-		else
-			status = 0;
+		uint8_t status = USB_endpoint_stalled() ? 0x01 : 0x00;
 		USB_set_endpoint(0);
-		USB_IN_write_word(status);
+		USB_IN_write_word((uint16_t)status);
 		USB_flush_IN();
 		USB_control_read_complete_status_stage();
-	} else if ((s->bRequest == CLEAR_FEATURE || s->bRequest == SET_FEATURE)
+	} else if ((request(s, CLEAR_FEATURE) || request(s, SET_FEATURE))
 			&& s->wValue == ENDPOINT_HALT) {
-		int i = s->wIndex & 0x7F;
+		uint16_t i = s->wIndex & 0x7F;
 		if (i >= 1 && i < NUM_ENDPOINTS) {
 			USB_control_write_complete_status_stage();
 			USB_set_endpoint(i);
@@ -268,6 +241,7 @@ static inline void handle_setup_packet()
 		USB_stall_endpoint();
 }
 
+/* Handle USB events */
 #define ENDPOINT_EVENTS (_BV(RXOUTI) | _BV(TXINI) | _BV(STALLEDI) | _BV(NAKOUTI) | _BV(NAKINI))
 ISR(USB_COM_vect)
 {
@@ -277,7 +251,7 @@ ISR(USB_COM_vect)
 		handle_setup_packet();
 		goto end;
 	}
-	for (uint8_t i = 0; i < NUM_ENDPOINT_INTERRUPT_HANDLERS; ++i) {
+	for (int i = 0; i < NUM_ENDPOINT_INTERRUPT_HANDLERS; ++i) {
 		uint8_t endpoint_number = get_pgm_struct_field(
 				&endpoint_int_handlers[i], endpoint_num);
 		USB_set_endpoint(endpoint_number);

@@ -66,7 +66,7 @@ struct sof_handler {
 
 /* An endpoint interrupt handler is called each time there is an interrupt on
  * the endpoint. The interrupt masks per endpoint are configured in struct
- * endpoint_config (field int_flags) */
+ * endpoint_config (int_flags field) */
 struct endpoint_interrupt_handler {
 	uint8_t endpoint_num;
 	void (*f)(uint8_t flags);
@@ -80,6 +80,7 @@ struct endpoint_config {
 	uint8_t int_flags;
 };
 
+/* 2 helper functions used to write request conditions */
 static inline bool request_type(struct setup_packet *s,
 		uint8_t mask, uint8_t flags)
 {

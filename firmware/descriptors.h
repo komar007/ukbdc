@@ -108,13 +108,13 @@ static uint8_t PROGMEM keyboard_hid_report_desc[] = {
 /* Simple 256-bit bitmap HID report descriptor. Bit on position i represents
  * the state of key number i. This allows for reserved 1-byte keycodes to be
  * sent to the host, which is not standard-compliant, so care has to be taken
- * not to set these bits if firmware */
+ * not to set these bits in firmware */
 static uint8_t PROGMEM keyboard_hid_report_desc[] = {
         0x05, 0x01,          // Usage Page (Generic Desktop),
         0x09, 0x06,          // Usage (Keyboard),
         0xA1, 0x01,          // Collection (Application),
         0x75, 0x01,          //   Report Size (1),
-        0x96, 0x00,0x01,          //   Report Count (256),
+        0x96, 0x00,0x01,     //   Report Count (256),
         0x05, 0x07,          //   Usage Page (Key Codes),
         0x19, 0x00,          //   Usage Minimum (0),
         0x29, 0xff,          //   Usage Maximum (255),
@@ -228,9 +228,6 @@ static uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	RAWHID_RX_INTERVAL			// bInterval
 };
 
-// If you're desperate for a little extra code memory, these strings
-// can be completely removed if iManufacturer, iProduct, iSerialNumber
-// in the device desciptor are changed to zeros.
 struct usb_string_descriptor_struct {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
