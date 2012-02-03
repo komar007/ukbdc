@@ -7,5 +7,5 @@
 #define RAWHID_USAGE		0x0200	// recommended: 0x0100 to 0xFFFF
 
 bool RAWHID_handle_control_request(struct setup_packet *s);
-bool RAWHID_send(const uint8_t *buffer);
-bool RAWHID_recv(uint8_t *buffer);
+bool RAWHID_send(const void *buffer);
+bool RAWHID_recv(void *buffer);

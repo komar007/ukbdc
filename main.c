@@ -9,7 +9,9 @@
 #include "usb_keyboard.h"
 #include "hid.h"
 #include "rawhid.h"
+#include "rawhid_protocol.h"
 #include "dataflash.h"
+#include "layout.h"
 
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
@@ -27,7 +29,7 @@ uint8_t matrix[8][8] = {
 
 bool states[8][8] = {{0}};
 
-uint8_t scan_codes[2][61] = {
+uint8_t PROGMEM scan_codes[2][61] = {
 	{KEY_ESC,  KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL, KEY_BACKSPACE,
 	KEY_TAB, KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P, KEY_LEFT_BRACE, KEY_RIGHT_BRACE, KEY_BACKSLASH,
 	KEY_CAPS_LOCK, KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON, KEY_QUOTE, KEY_ENTER,
@@ -60,7 +62,7 @@ void scan_matrix()
 		for (uint8_t j = 0; j < 8; ++j) {
 			bool state = !(val & 0x01);
 			uint8_t layer = states[6][7];
-			uint8_t code = scan_codes[layer][matrix[j][i]];
+			uint8_t code = LAYOUT_get_scancode(layer, matrix[j][i]);
 			if (state != states[j][i]) {
 				changed = true;
 				states[j][i] = state;
@@ -110,6 +112,11 @@ int main(void)
 #ifdef PLATFORM_alpha
 	DATAFLASH_read_page(0, buf);
 #endif
+
+	uint8_t *layout = malloc(sizeof(scan_codes));
+	for (int i = 0; i < sizeof(scan_codes); ++i)
+		layout[i] = pgm_read_byte((void*)scan_codes+i);
+	LAYOUT_set(layout);
 
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */

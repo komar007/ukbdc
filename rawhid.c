@@ -2,7 +2,7 @@
 
 #include <avr/interrupt.h>
 
-bool RAWHID_send(const uint8_t *buffer)
+bool RAWHID_send(const void *buffer)
 {
 	if (!USB_get_configuration())
 		return false;
@@ -19,7 +19,7 @@ bool RAWHID_send(const uint8_t *buffer)
 	return true;
 }
 
-bool RAWHID_recv(uint8_t *buffer)
+bool RAWHID_recv(void *buffer)
 {
 	if (!USB_get_configuration())
 		return false;
