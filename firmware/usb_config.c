@@ -17,11 +17,12 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 	{.num = RAWHID_RX_ENDPOINT,
 		.type = EP_TYPE_INTERRUPT_OUT,
 		.config = EP_SIZE_64 | EP_DOUBLE_BUFFER,
-		.int_flags = 0x00}
+		.int_flags = _BV(RXOUTE)}
 };
 
 #include "hid.h"
 #include "rawhid.h"
+#include "rawhid_protocol.h"
 #include "main.h"
 struct interface_request_handler
 iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
@@ -32,6 +33,8 @@ iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 };
 struct endpoint_interrupt_handler PROGMEM
 endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
+	{.endpoint_num = RAWHID_RX_ENDPOINT,
+		.f = &RAWHID_PROTOCOL_handle_packet}
 };
 struct sof_handler
 sof_handlers[NUM_SOF_HANDLERS] = {

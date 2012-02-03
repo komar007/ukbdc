@@ -39,10 +39,31 @@
 
 /* [/Inferface configuration section] -------------------------------------- */
 
+/* A standard request handler takes a setup_packet and returns true if the
+ * request was processed or false if there was an error or the request is not
+ * supported */
+struct interface_request_handler {
+	uint16_t iface_num;
+	bool (*f)(struct setup_packet*);
+};
+
+/* A SOF handler is called each time a SOF comes */
+struct sof_handler {
+	void (*f)();
+};
+
+/* An endpoint interrupt handler is called each time there is an interrupt on
+ * the endpoint. The interrupt masks per endpoint are configured in struct
+ * endpoint_config (int_flags field) */
+struct endpoint_interrupt_handler {
+	uint8_t endpoint_num;
+	void (*f)(uint8_t flags);
+};
+
 /* [API section] ----------------------------------------------------------- */
 
 #define NUM_INTERFACE_REQUEST_HANDLERS		2
-#define NUM_ENDPOINT_INTERRUPT_HANDLERS		0
+#define NUM_ENDPOINT_INTERRUPT_HANDLERS		1
 #define NUM_SOF_HANDLERS			2
 
 extern struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];

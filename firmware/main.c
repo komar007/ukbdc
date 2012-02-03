@@ -128,7 +128,6 @@ int main(void)
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
 		RAWHID_PROTOCOL_task();
-		RAWHID_send(buf);
 		_delay_ms(5);
 	}
 
