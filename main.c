@@ -12,6 +12,7 @@
 #include "rawhid_protocol.h"
 #include "dataflash.h"
 #include "layout.h"
+#include "hc595.h"
 
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
@@ -97,6 +98,9 @@ int main(void)
 #ifdef PLATFORM_alpha
 	DDRB |= _BV(PB2) | _BV(PB1) | _BV(PB0);
 	PORTB &= ~(_BV(PB1) | _BV(PB3));
+
+	PORTC &= ~(_BV(PC6) | _BV(PC7));
+	DDRC |= _BV(PC6) | _BV(PC7);
 #endif
 	/* PORTD - output */
 	PORTD = 0xff;
@@ -111,6 +115,7 @@ int main(void)
 
 #ifdef PLATFORM_alpha
 	DATAFLASH_read_page(0, buf);
+	HC595_set_outputs(0xaaaa);
 #endif
 
 	uint8_t *layout = malloc(sizeof(scan_codes));

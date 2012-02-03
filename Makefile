@@ -1,6 +1,6 @@
 CC=avr-gcc -Os -std=gnu99 -lm -mmcu=atmega32u4 -g -ggdb
 WARN=-Wall -Wextra
-SOURCES=main.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c dataflash.c rawhid_protocol.c layout.c
+SOURCES=main.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c dataflash.c rawhid_protocol.c layout.c hc595.c
 PLATFORMS=ikea alpha
 
 all: dep
@@ -51,7 +51,8 @@ bin/ukbdc-alpha.elf: \
 	bin/platforms/alpha/rawhid.o \
 	bin/platforms/alpha/rawhid_protocol.o \
 	bin/platforms/alpha/dataflash.o \
-	bin/platforms/alpha/layout.o
+	bin/platforms/alpha/layout.o \
+	bin/platforms/alpha/hc595.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
 
