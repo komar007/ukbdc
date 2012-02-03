@@ -18,15 +18,15 @@ prep:
 
 dep:
 	@for p in $(PLATFORMS); do \
-		echo -en > Makefile.dep-$$p; \
+		echo -en > .Makefile.dep-$$p; \
 		for s in $(SOURCES); do \
-			gcc -DPLATFORM_$$p -M -MT bin/platforms/$$p/$${s%.c}.o $$s >> Makefile.dep-$$p; \
-			echo -e '\t'@echo CC $$s >> Makefile.dep-$$p; \
-			echo -e '\t'@$(CC) -DPLATFORM_$$p $(WARN) -c $$s -o bin/platforms/$$p/$${s%.c}.o >> Makefile.dep-$$p; \
+			gcc -DPLATFORM_$$p -M -MT bin/platforms/$$p/$${s%.c}.o $$s >> .Makefile.dep-$$p; \
+			echo -e '\t'@echo CC $$s >> .Makefile.dep-$$p; \
+			echo -e '\t'@$(CC) -DPLATFORM_$$p $(WARN) -c $$s -o bin/platforms/$$p/$${s%.c}.o >> .Makefile.dep-$$p; \
 		done \
 	done
 
--include Makefile.dep*
+-include .Makefile.dep*
 
 bin/ukbdc_cli: \
 	bin/platforms/linux/main.o
@@ -34,4 +34,4 @@ bin/ukbdc_cli: \
 	@$(CC) -o $@ $^
 
 clean:
-	rm -fr bin Makefile.dep-*
+	rm -fr bin .Makefile.dep-*
