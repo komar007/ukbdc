@@ -1,17 +1,5 @@
 #pragma once
 
-#include "usb_hardware.h"
-
-#include <stdint.h>
-#include <stdbool.h>
-
-// This file does not include the HID debug functions, so these empty
-// macros replace them with nothing, so users can compile code that
-// has calls to these functions.
-#define usb_debug_putchar(c)
-#define usb_debug_flush_output()
-
-
 #define KEY_CTRL	0xE0
 #define KEY_SHIFT	0xE1
 #define KEY_ALT		0xE2
@@ -121,11 +109,3 @@
 #define KEYPAD_9	97
 #define KEYPAD_0	98
 #define KEYPAD_PERIOD	99
-
-
-
-
-// Everything below this point is only intended for usb_serial.c
-#include <avr/io.h>
-#include <avr/pgmspace.h>
-#include <avr/interrupt.h>
