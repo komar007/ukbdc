@@ -1,6 +1,6 @@
 CC=avr-gcc -Os -std=gnu99 -lm -mmcu=atmega32u4 -g -ggdb
 WARN=-Wall -Wextra
-SOURCES=main.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c dataflash.c rawhid_protocol.c layout.c hc595.c
+SOURCES=main_ikea.c main_alpha.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c dataflash.c rawhid_protocol.c layout.c hc595.c
 PLATFORMS=ikea alpha
 
 all: dep
@@ -31,7 +31,7 @@ dep:
 -include .Makefile.dep*
 
 bin/ukbdc-ikea.elf: \
-	bin/platforms/ikea/main.o \
+	bin/platforms/ikea/main_ikea.o \
 	bin/platforms/ikea/usb.o \
 	bin/platforms/ikea/usb_config.o \
 	bin/platforms/ikea/usb_hardware.o \
@@ -43,7 +43,7 @@ bin/ukbdc-ikea.elf: \
 	@$(CC) -o $@ $^
 
 bin/ukbdc-alpha.elf: \
-	bin/platforms/alpha/main.o \
+	bin/platforms/alpha/main_alpha.o \
 	bin/platforms/alpha/usb.o \
 	bin/platforms/alpha/usb_config.o \
 	bin/platforms/alpha/usb_hardware.o \
@@ -60,6 +60,8 @@ bin/%.hex: bin/%.elf
 	avr-objcopy -O ihex $^ $@
 
 program-ikea: bin/ukbdc-ikea.hex
+	sudo ../ukbdc_cli/bin/ukbdc_cli
+	sleep 1;
 	sudo dfu-programmer atmega32u4 erase
 	sudo dfu-programmer atmega32u4 flash bin/ukbdc-ikea.hex
 	sudo dfu-programmer atmega32u4 start

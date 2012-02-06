@@ -95,13 +95,6 @@ int main(void)
 	PORTB = 0xff;
 	DDRB  = 0x00;
 
-#ifdef PLATFORM_alpha
-	DDRB |= _BV(PB2) | _BV(PB1) | _BV(PB0);
-	PORTB &= ~(_BV(PB1) | _BV(PB3));
-
-	PORTC &= ~(_BV(PC6) | _BV(PC7));
-	DDRC |= _BV(PC6) | _BV(PC7);
-#endif
 	/* PORTD - output */
 	PORTD = 0xff;
 	DDRD = 0xff;
@@ -112,11 +105,6 @@ int main(void)
 
 	HID_commit_state();
 	uint8_t buf[518] = "kupka kupka\n";
-
-#ifdef PLATFORM_alpha
-	DATAFLASH_read_page(0, buf);
-	HC595_set_outputs(0xaaaa);
-#endif
 
 	uint8_t *layout = malloc(sizeof(scan_codes));
 	for (unsigned i = 0; i < sizeof(scan_codes); ++i)
@@ -145,9 +133,7 @@ ISR(TIMER0_OVF_vect)
 	static uint8_t num = 0;
 	if (num > 16) {
 		num = 0;
-#ifdef PLATFORM_ikea
 		scan_matrix();
-#endif
 	} else {
 		++num;
 	}
