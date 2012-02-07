@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #include "usb_keyboard.h"
+#include "io.h"
 #include "hid.h"
 #include "rawhid.h"
 #include "rawhid_protocol.h"
@@ -17,7 +18,7 @@
 uint8_t number_keys[10]=
 	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
 
-uint8_t matrix[8][8] = {
+uint8_t matrix[16][8] = {
 	{23,  0, 20, 24, 15, 19, 16,  0},
 	{50, 52, 49, 51, 43, 46, 45, 41},
 	{36, 27, 48, 39, 30, 33, 44, 28},
@@ -28,7 +29,7 @@ uint8_t matrix[8][8] = {
 	{ 9, 13,  6, 10,  1,  5,  2,  0},
 };
 
-bool states[8][8] = {{0}};
+bool states[16][8] = {{0}};
 
 uint8_t PROGMEM scan_codes[2][61] = {
 	{KEY_ESC,  KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL, KEY_BACKSPACE,
@@ -53,14 +54,26 @@ bool is_modifier(uint8_t key_n)
 	return false;
 }
 
+uint16_t get_input()
+{
+	uint16_t ret = 0;
+	for (int i = 0; i < 16; ++i) {
+		ret <<= 1;
+		ret |= IO_get(i) ? 0x0001 : 0x0000;
+	}
+	return ret;
+}
+
 void scan_matrix()
 {
 	bool changed = false;
 	for (uint8_t i = 0; i < 8; ++i) {
-		PORTD = ~(0x01 << i);
+		for (int j = 0; j < 16; ++j)
+			IO_set(j | 0x80, true);
+		IO_set((i) | 0x80, false);
 		_delay_us(10);
-		uint8_t val = PINB;
-		for (uint8_t j = 0; j < 8; ++j) {
+		uint16_t val = get_input();
+		for (uint8_t j = 0; j < 16; ++j) {
 			bool state = !(val & 0x01);
 			uint8_t layer = states[6][7];
 			uint8_t code = LAYOUT_get_scancode(layer, matrix[j][i]);
@@ -85,19 +98,20 @@ void scan_matrix()
 	}
 	if (changed)
 		HID_commit_state();
-	PORTD = 0xff;
 }
 
 int main(void)
 {
 	clock_prescale_set(clock_div_1);
-	/* PORTB - input, pull up */
-	PORTB = 0xff;
-	DDRB  = 0x00;
 
-	/* PORTD - output */
-	PORTD = 0xff;
-	DDRD = 0xff;
+	for (int i = 0; i < NUM_IO; ++i) {
+		IO_config(i, INPUT);
+		IO_set(i, true);
+	}
+
+	DDRB |= _BV(PB2) | _BV(PB1); // MOSI, SCK
+	DDRC |= _BV(PC7) | _BV(PC6); // LATCH, BUFEN
+
 
 	USB_init();
 	while (USB_get_configuration() == 0)

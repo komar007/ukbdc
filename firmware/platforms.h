@@ -24,3 +24,18 @@
 	#define HC595_LATCH_HIGH()	PORTC |= _BV(PC7)
 	#define HC595_LATCH_LOW()	PORTC &= ~_BV(PC7)
 #endif
+
+#ifdef PLATFORM_alpha
+	#define NUM_IO			19
+#else
+	#define NUM_IO			0
+#endif
+
+struct pin_config {
+	volatile uint8_t *portx;
+	volatile uint8_t *pinx;
+	volatile uint8_t *ddrx;
+	uint8_t mask;
+};
+
+struct pin_config PINS[NUM_IO];

@@ -1,6 +1,19 @@
 CC=avr-gcc -Os -std=gnu99 -lm -mmcu=atmega32u4 -g -ggdb
 WARN=-Wall -Wextra
-SOURCES=main_ikea.c main_alpha.c usb.c usb_config.c usb_hardware.c hid.c rawhid.c dataflash.c rawhid_protocol.c layout.c hc595.c
+SOURCES=\
+	main_ikea.c\
+	main_alpha.c\
+	io.c\
+	platforms.c\
+	usb.c\
+	usb_config.c\
+	usb_hardware.c\
+	hid.c\
+	rawhid.c\
+	dataflash.c\
+	rawhid_protocol.c\
+	layout.c\
+	hc595.c
 PLATFORMS=ikea alpha
 
 all: dep
@@ -32,6 +45,8 @@ dep:
 
 bin/ukbdc-ikea.elf: \
 	bin/platforms/ikea/main_ikea.o \
+	bin/platforms/ikea/io.o \
+	bin/platforms/ikea/platforms.o \
 	bin/platforms/ikea/usb.o \
 	bin/platforms/ikea/usb_config.o \
 	bin/platforms/ikea/usb_hardware.o \
@@ -44,6 +59,8 @@ bin/ukbdc-ikea.elf: \
 
 bin/ukbdc-alpha.elf: \
 	bin/platforms/alpha/main_alpha.o \
+	bin/platforms/alpha/io.o \
+	bin/platforms/alpha/platforms.o \
 	bin/platforms/alpha/usb.o \
 	bin/platforms/alpha/usb_config.o \
 	bin/platforms/alpha/usb_hardware.o \
