@@ -12,6 +12,8 @@
 /* Message types */
 #define MESSAGE_DFU		0x00
 #define MESSAGE_SET_LAYOUT	0x01
+#define MESSAGE_SCAN_MATRIX	0x02
+#define MESSAGE_SET_MATRIX	0x03
 
 struct RAWHID_packet {
 	uint8_t header;

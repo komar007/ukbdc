@@ -15,35 +15,31 @@
 #include "layout.h"
 #include "hc595.h"
 
-uint8_t number_keys[10]=
-	{KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
+#include <stdio.h> /* sprintf */
 
-uint8_t matrix[16][8] = {
-	{23,  0, 20, 24, 15, 19, 16,  0},
-	{50, 52, 49, 51, 43, 46, 45, 41},
-	{36, 27, 48, 39, 30, 33, 44, 28},
-	{58, 60, 57, 59, 55, 47, 56, 42},
-	{22, 26, 21, 25, 14, 18, 17, 53},
-	{37, 40, 35, 38, 31, 34, 32, 29},
-	{ 8, 12,  7, 11,  0,  4,  3, 54},
-	{ 9, 13,  6, 10,  1,  5,  2,  0},
+volatile uint8_t matrix[19][8] = {
+	{41, 0, 0, 0, 0, 52, 0, 0},
+	{20, 49, 36, 21, 6, 7, 35, 48},
+	{0, 0, 58, 0, 0, 0, 0, 0},
+	{19, 50, 37, 22, 5, 8, 34, 47},
+	{0, 0, 59, 0, 0, 27, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{16, 0, 0, 25, 2, 11, 31, 44},
+	{17, 56, 39, 24, 3, 10, 32, 45},
+	{14, 0, 0, 40, 0, 13, 29, 42},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{15, 0, 0, 26, 1, 12, 30, 43},
+	{18, 51, 38, 23, 4, 9, 33, 46},
+	{0, 0, 0, 0, 54, 0, 0, 0},
+	{0, 0, 57, 0, 0, 0, 0, 55},
+	{0, 0, 0, 60, 28, 0, 53, 0},
 };
 
-bool states[16][8] = {{0}};
-
-uint8_t PROGMEM scan_codes[2][61] = {
-	{KEY_ESC,  KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL, KEY_BACKSPACE,
-	KEY_TAB, KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P, KEY_LEFT_BRACE, KEY_RIGHT_BRACE, KEY_BACKSLASH,
-	KEY_CAPS_LOCK, KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON, KEY_QUOTE, KEY_ENTER,
-	KEY_LEFT_SHIFT, KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B, KEY_N, KEY_M, KEY_COMMA, KEY_PERIOD, KEY_SLASH, KEY_RIGHT_SHIFT,
-	KEY_LEFT_CTRL, 0, KEY_LEFT_ALT, KEY_SPACE, KEY_RIGHT_ALT, KEY_RIGHT_GUI, KEY_RIGHT_GUI, KEY_RIGHT_CTRL},
-
-	{KEY_TILDE,  KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12, KEY_DELETE,
-	KEY_TAB, KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_INSERT, KEY_O, KEY_P, KEY_LEFT_BRACE, KEY_RIGHT_BRACE, KEY_BACKSLASH,
-	KEY_CAPS_LOCK, KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_RIGHT, KEY_SEMICOLON, KEY_QUOTE, KEY_ENTER,
-	KEY_LEFT_SHIFT, KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B, KEY_N, KEY_M, KEY_COMMA, KEY_PERIOD, KEY_SLASH, KEY_RIGHT_SHIFT,
-	KEY_LEFT_CTRL, 0, KEY_LEFT_ALT, KEY_SPACE, KEY_RIGHT_ALT, KEY_RIGHT_GUI, KEY_RIGHT_GUI, KEY_RIGHT_CTRL}
-};
+bool states[19][8] = {{0}};
 
 bool is_modifier(uint8_t key_n)
 {
@@ -68,14 +64,13 @@ void scan_matrix()
 {
 	bool changed = false;
 	for (uint8_t i = 0; i < 8; ++i) {
-		for (int j = 0; j < 16; ++j)
+		for (int j = 0; j < 8; ++j)
 			IO_set(j | 0x80, true);
 		IO_set((i) | 0x80, false);
 		_delay_us(10);
-		uint16_t val = get_input();
-		for (uint8_t j = 0; j < 16; ++j) {
-			bool state = !(val & 0x01);
-			uint8_t layer = states[6][7];
+		for (uint8_t j = 0; j < 19; ++j) {
+			bool state = !IO_get(j);
+			uint8_t layer = 0;
 			uint8_t code = LAYOUT_get_scancode(layer, matrix[j][i]);
 			if (state != states[j][i]) {
 				changed = true;
@@ -93,7 +88,6 @@ void scan_matrix()
 					break;
 				}
 			}
-			val >>= 1;
 		}
 	}
 	if (changed)
@@ -109,8 +103,11 @@ int main(void)
 		IO_set(i, true);
 	}
 
-	DDRB |= _BV(PB2) | _BV(PB1); // MOSI, SCK
+	PORTB |= _BV(PB0);
+	DDRB |= _BV(PB2) | _BV(PB1) | _BV(PB0); // MOSI, SCK, MEMCS
 	DDRC |= _BV(PC7) | _BV(PC6); // LATCH, BUFEN
+	DDRB &= ~_BV(PB3); // MISO
+	PORTB &= ~_BV(PB3);
 
 
 	USB_init();
@@ -118,19 +115,22 @@ int main(void)
 		;
 
 	HID_commit_state();
-	uint8_t buf[518] = "kupka kupka\n";
 
-	uint8_t *layout = malloc(sizeof(scan_codes));
-	for (unsigned i = 0; i < sizeof(scan_codes); ++i)
-		layout[i] = pgm_read_byte((void*)scan_codes+i);
-	LAYOUT_set(layout);
+	int size;
+	DATAFLASH_read_page(1, sizeof(size), &size);
+	if (size != -1) {
+		uint8_t *layout = malloc(size);
+		DATAFLASH_read_page(2, (uint16_t)size, layout);
+		RAWHID_send(layout);
+		LAYOUT_set(layout);
+	}
+	DATAFLASH_read_page(0, sizeof(matrix), matrix);
 
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
 		RAWHID_PROTOCOL_task();
-		_delay_ms(5);
 	}
 
 	while (1)

@@ -1,5 +1,7 @@
 #include "rawhid_protocol.h"
+#include "platforms.h"
 #include "layout.h"
+#include "scanner.h"
 
 #include <avr/interrupt.h>
 #include <avr/power.h>
@@ -58,6 +60,12 @@
  */
 
 /* FIXME: Temporary ugly code! */
+#ifdef PLATFORM_alpha
+#include "dataflash.h"
+#endif
+
+#include <util/delay.h>
+
 void RAWHID_PROTOCOL_task()
 {
 	struct RAWHID_packet buf;
@@ -70,6 +78,7 @@ void RAWHID_PROTOCOL_task()
 			break;
 		} case MESSAGE_SET_LAYOUT: {
 			int n = buf.payload[0] + (buf.payload[1] << 8);
+			int old_n = n;
 			uint8_t *ptr = malloc(sizeof(uint8_t) * n);
 			uint8_t *ptr1 = ptr;
 			while (n > 0) {
@@ -81,6 +90,41 @@ void RAWHID_PROTOCOL_task()
 				n -= RAWHID_SIZE;
 			}
 			LAYOUT_set(ptr);
+#ifdef PLATFORM_alpha
+			DATAFLASH_write_page(1, sizeof(old_n), &old_n);
+			_delay_ms(40);
+			DATAFLASH_write_page(2, (uint16_t)old_n, ptr);
+#endif
+			break;
+		} case MESSAGE_SCAN_MATRIX: {
+			uint8_t timsk = TIMSK0;
+			TIMSK0 = 0;
+			struct scan_result result = SCANNER_scan(
+					buf.payload[0], &buf.payload[1],
+					buf.payload[1+buf.payload[0]], &buf.payload[2+buf.payload[0]]);
+			char msg[64] = {0};
+			msg[0] = result.status;
+			msg[1] = result.a;
+			msg[2] = result.b;
+			RAWHID_send(&msg);
+			TIMSK0 = timsk;
+			break;
+		} case MESSAGE_SET_MATRIX: {
+			int n = buf.payload[0] + (buf.payload[1] << 8);
+			int old_n = n;
+			extern uint8_t matrix[19][8];
+			uint8_t *ptr1 = matrix;
+			while (n > 0) {
+				while (!RAWHID_recv(&buf))
+					;
+				uint8_t nrecv = n > RAWHID_SIZE ? RAWHID_SIZE : n;
+				memcpy(ptr1, &buf, nrecv);
+				ptr1 += nrecv;
+				n -= RAWHID_SIZE;
+			}
+#ifdef PLATFORM_alpha
+			DATAFLASH_write_page(0, old_n, (uint8_t*)matrix);
+#endif
 			break;
 		}
 		}

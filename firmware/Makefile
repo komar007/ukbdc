@@ -13,7 +13,8 @@ SOURCES=\
 	dataflash.c\
 	rawhid_protocol.c\
 	layout.c\
-	hc595.c
+	hc595.c \
+	scanner.c
 PLATFORMS=ikea alpha
 
 all: dep
@@ -53,6 +54,7 @@ bin/ukbdc-ikea.elf: \
 	bin/platforms/ikea/hid.o \
 	bin/platforms/ikea/rawhid.o \
 	bin/platforms/ikea/rawhid_protocol.o \
+	bin/platforms/ikea/scanner.o \
 	bin/platforms/ikea/layout.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
@@ -69,6 +71,7 @@ bin/ukbdc-alpha.elf: \
 	bin/platforms/alpha/rawhid_protocol.o \
 	bin/platforms/alpha/dataflash.o \
 	bin/platforms/alpha/layout.o \
+	bin/platforms/alpha/scanner.o \
 	bin/platforms/alpha/hc595.o
 	@echo LINK $@
 	@$(CC) -o $@ $^

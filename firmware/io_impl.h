@@ -5,7 +5,7 @@
 
 static inline bool IO_get_internal(uint8_t pin)
 {
-	return *PINS[pin].pinx & PINS[pin].mask;
+	return (*PINS[pin].pinx & PINS[pin].mask) ? true : false;
 }
 
 static inline void IO_set_internal(uint8_t pin, bool val)

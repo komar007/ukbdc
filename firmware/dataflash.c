@@ -38,26 +38,26 @@ uint8_t DATAFLASH_status()
 	return status;
 }
 
-void DATAFLASH_write_page(uint16_t page_addr, const uint8_t *buffer)
+void DATAFLASH_write_page(uint16_t page_addr, uint16_t size, const uint8_t *buffer)
 {
 	DATAFLASH_CS_SET();
 	DATAFLASH_send_byte(PROGRAM_THROUGH_BUFFER);
 	DATAFLASH_send_byte((uint8_t)(page_addr >> 6));
 	DATAFLASH_send_byte((uint8_t)(page_addr << 2));
 	DATAFLASH_send_byte(0x00);
-	for (uint16_t i = 0; i < DATAFLASH_PAGE_SIZE; ++i)
+	for (uint16_t i = 0; i < size; ++i)
 		DATAFLASH_send_byte(buffer[i]);
 	DATAFLASH_CS_CLEAR();
 }
 
-void DATAFLASH_read_page(uint16_t page_addr, uint8_t *buffer)
+void DATAFLASH_read_page(uint16_t page_addr, uint16_t size, uint8_t *buffer)
 {
 	DATAFLASH_CS_SET();
 	DATAFLASH_send_byte(CONTINUOUS_ARRAY_READ_LOW);
 	DATAFLASH_send_byte((uint8_t)(page_addr >> 6));
 	DATAFLASH_send_byte((uint8_t)(page_addr << 2));
 	DATAFLASH_send_byte(0x00);
-	for (uint16_t i = 0; i < DATAFLASH_PAGE_SIZE; ++i)
+	for (uint16_t i = 0; i < size; ++i)
 		buffer[i] = DATAFLASH_recv_byte();
 	DATAFLASH_CS_CLEAR();
 }
