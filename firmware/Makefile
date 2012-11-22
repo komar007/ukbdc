@@ -4,6 +4,7 @@ SOURCES=\
 	main_ikea.c\
 	main_alpha.c\
 	main_xt.c \
+	main_gh60.c \
 	io.c\
 	platforms.c\
 	usb.c\
@@ -16,7 +17,8 @@ SOURCES=\
 	layout.c\
 	hc595.c \
 	scanner.c \
-PLATFORMS=ikea alpha xt
+	matrix.c
+PLATFORMS=ikea alpha xt gh60
 
 all: dep
 	@for p in $(PLATFORMS); do \
@@ -29,6 +31,8 @@ alpha: prep
 	make bin/ukbdc-alpha.hex
 xt: prep
 	make bin/ukbdc-xt.hex
+gh60: prep
+	make bin/ukbdc-gh60.hex
 
 prep:
 	@for p in $(PLATFORMS); do \
@@ -59,6 +63,22 @@ bin/ukbdc-ikea.elf: \
 	bin/platforms/ikea/rawhid_protocol.o \
 	bin/platforms/ikea/scanner.o \
 	bin/platforms/ikea/layout.o
+	@echo LINK $@
+	@$(CC) -o $@ $^
+
+bin/ukbdc-gh60.elf: \
+	bin/platforms/gh60/main_gh60.o \
+	bin/platforms/gh60/io.o \
+	bin/platforms/gh60/platforms.o \
+	bin/platforms/gh60/usb.o \
+	bin/platforms/gh60/usb_config.o \
+	bin/platforms/gh60/usb_hardware.o \
+	bin/platforms/gh60/hid.o \
+	bin/platforms/gh60/rawhid.o \
+	bin/platforms/gh60/rawhid_protocol.o \
+	bin/platforms/gh60/matrix.o \
+	bin/platforms/gh60/scanner.o \
+	bin/platforms/gh60/layout.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
 
@@ -100,7 +120,7 @@ bin/%.hex: bin/%.elf
 	avr-objcopy -O ihex $^ $@
 
 program-ikea: bin/ukbdc-ikea.hex
-	sudo ../ukbdc_cli/bin/ukbdc_cli
+	#sudo ../ukbdc_cli/bin/ukbdc_cli
 	sleep 1;
 	sudo dfu-programmer atmega32u4 erase
 	sudo dfu-programmer atmega32u4 flash bin/ukbdc-ikea.hex
@@ -109,6 +129,13 @@ program-ikea: bin/ukbdc-ikea.hex
 program-alpha: bin/ukbdc-alpha.hex
 	sudo dfu-programmer atmega32u4 erase
 	sudo dfu-programmer atmega32u4 flash bin/ukbdc-alpha.hex
+	sudo dfu-programmer atmega32u4 start
+
+program-gh60: bin/ukbdc-gh60.hex
+	sudo ../ukbdc_cli/bin/ukbdc_cli /dev/hidraw1 dfu
+	sleep 2
+	sudo dfu-programmer atmega32u4 erase
+	sudo dfu-programmer atmega32u4 flash bin/ukbdc-gh60.hex
 	sudo dfu-programmer atmega32u4 start
 
 program-xt: bin/ukbdc-xt.hex

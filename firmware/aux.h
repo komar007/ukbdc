@@ -16,3 +16,6 @@
 	: \
 		pgm_read_dword((uint8_t*)(addr) + offsetof(typeof(*(addr)), field)) \
 	)
+
+/* evaluates to ceil(x / n) */
+#define divceil(x, n) (((x) + (n) - 1) / (n))

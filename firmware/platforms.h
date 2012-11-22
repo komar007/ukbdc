@@ -27,6 +27,8 @@
 
 #ifdef PLATFORM_alpha
 	#define NUM_IO			19
+#elif defined(PLATFORM_gh60)
+	#define NUM_IO			19
 #else
 	#define NUM_IO			0
 #endif

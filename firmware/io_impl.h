@@ -25,14 +25,14 @@ static inline void IO_config_internal(uint8_t pin, bool dir)
 }
 
 
-#if defined(PLATFORM_ikea) || defined(PLATFORM_alpha)
+#if defined(PLATFORM_ikea) || defined(PLATFORM_alpha) || defined(PLATFORM_gh60)
 static inline bool IO_get_external(__attribute__((unused)) uint8_t pin)
 {
 	return false;
 }
 #endif
 
-#if defined(PLATFORM_ikea)
+#if defined(PLATFORM_ikea) || defined(PLATFORM_gh60)
 static inline void IO_set_external(__attribute__((unused)) uint8_t pin, __attribute__((unused)) bool val)
 {
 }
@@ -49,7 +49,7 @@ void IO_set_external(uint8_t pin, bool val)
 #endif
 
 
-#if defined(PLATFORM_alpha) || defined(PLATFORM_ikea)
+#if defined(PLATFORM_alpha) || defined(PLATFORM_ikea) || defined(PLATFORM_gh60)
 static inline void IO_config_external(__attribute__((unused)) uint8_t pin, __attribute__((unused)) bool dir)
 {
 }
