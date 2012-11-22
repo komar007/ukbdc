@@ -3,6 +3,7 @@ WARN=-Wall -Wextra
 SOURCES=\
 	main_ikea.c\
 	main_alpha.c\
+	main_xt.c \
 	io.c\
 	platforms.c\
 	usb.c\
@@ -14,8 +15,8 @@ SOURCES=\
 	rawhid_protocol.c\
 	layout.c\
 	hc595.c \
-	scanner.c
-PLATFORMS=ikea alpha
+	scanner.c \
+PLATFORMS=ikea alpha xt
 
 all: dep
 	@for p in $(PLATFORMS); do \
@@ -26,6 +27,8 @@ ikea: prep
 	make bin/ukbdc-ikea.hex
 alpha: prep
 	make bin/ukbdc-alpha.hex
+xt: prep
+	make bin/ukbdc-xt.hex
 
 prep:
 	@for p in $(PLATFORMS); do \
@@ -71,6 +74,23 @@ bin/ukbdc-alpha.elf: \
 	bin/platforms/alpha/rawhid_protocol.o \
 	bin/platforms/alpha/dataflash.o \
 	bin/platforms/alpha/layout.o \
+	bin/plapforms/alpha/scanner.o \
+	bin/platforms/alpha/hc595.o
+	@echo LINK $@
+	@$(CC) -o $@ $^
+
+bin/ukbdc-xt.elf: \
+	bin/platforms/alpha/main_xt.o \
+	bin/platforms/alpha/io.o \
+	bin/platforms/alpha/platforms.o \
+	bin/platforms/alpha/usb.o \
+	bin/platforms/alpha/usb_config.o \
+	bin/platforms/alpha/usb_hardware.o \
+	bin/platforms/alpha/hid.o \
+	bin/platforms/alpha/rawhid.o \
+	bin/platforms/alpha/rawhid_protocol.o \
+	bin/platforms/alpha/dataflash.o \
+	bin/platforms/alpha/layout.o \
 	bin/platforms/alpha/scanner.o \
 	bin/platforms/alpha/hc595.o
 	@echo LINK $@
@@ -89,6 +109,11 @@ program-ikea: bin/ukbdc-ikea.hex
 program-alpha: bin/ukbdc-alpha.hex
 	sudo dfu-programmer atmega32u4 erase
 	sudo dfu-programmer atmega32u4 flash bin/ukbdc-alpha.hex
+	sudo dfu-programmer atmega32u4 start
+
+program-xt: bin/ukbdc-xt.hex
+	sudo dfu-programmer atmega32u4 erase
+	sudo dfu-programmer atmega32u4 flash bin/ukbdc-xt.hex
 	sudo dfu-programmer atmega32u4 start
 
 clean:
