@@ -24,7 +24,7 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 #include "rawhid.h"
 #include "rawhid_protocol.h"
 #include "main.h"
-struct interface_request_handler
+struct interface_request_handler PROGMEM
 iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 	{.iface_num = KEYBOARD_INTERFACE,
 		.f = &HID_handle_control_request},

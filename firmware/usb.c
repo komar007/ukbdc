@@ -206,8 +206,11 @@ static inline bool process_class_interface_requests(struct setup_packet *s)
 {
 	bool found = false;
 	for (uint8_t i = 0; i < NUM_INTERFACE_REQUEST_HANDLERS; ++i) {
-		if (get_pgm_struct_field(&iface_req_handlers[i], iface_num) == s->wIndex) {
-			found = (*iface_req_handlers[i].f)(s);
+		if (get_pgm_struct_field(&iface_req_handlers[i], iface_num) ==
+				(s->wIndex & 0xFF)) {
+			interface_request_handler_fun handler =
+				get_pgm_struct_field(&iface_req_handlers[i], f);
+			found = (*handler)(s);
 			break;
 		}
 	}
