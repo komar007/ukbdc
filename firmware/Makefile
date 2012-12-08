@@ -94,7 +94,7 @@ bin/ukbdc-alpha.elf: \
 	bin/platforms/alpha/rawhid_protocol.o \
 	bin/platforms/alpha/dataflash.o \
 	bin/platforms/alpha/layout.o \
-	bin/plapforms/alpha/scanner.o \
+	bin/platforms/alpha/scanner.o \
 	bin/platforms/alpha/hc595.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
