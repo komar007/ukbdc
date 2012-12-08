@@ -70,11 +70,16 @@ void scan_callback(uint8_t num, bool state)
 	}
 }
 
+#define LED 19
+
 int main(void)
 {
 	clock_prescale_set(clock_div_1);
 
-	for (int i = 5; i < NUM_IO; ++i) {
+	IO_config(LED, OUTPUT);
+	IO_set(LED, true);
+
+	for (int i = 5; i < 19; ++i) {
 		IO_config(i, INPUT);
 		IO_set(i, true);
 	}
@@ -120,6 +125,10 @@ ISR(TIMER0_OVF_vect)
 		bool changed = MATRIX_scan();
 		if (changed)
 			HID_commit_state();
+		if (HID_get_leds() & 0x02)
+			IO_set(LED, false);
+		else
+			IO_set(LED, true);
 	} else {
 		++num;
 	}

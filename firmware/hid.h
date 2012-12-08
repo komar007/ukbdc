@@ -10,4 +10,5 @@ void HID_handle_sof();
 
 bool HID_scancode_is_pressed(uint8_t code);
 void HID_set_scancode_state(uint8_t code, bool state);
+uint8_t HID_get_leds();
 void HID_commit_state();
