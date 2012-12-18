@@ -169,7 +169,7 @@ static inline bool process_standard_endpoint_requests(struct setup_packet *s)
 		if (i >= 1 && i < NUM_ENDPOINTS) {
 			USB_control_write_complete_status_stage();
 			USB_set_endpoint(i);
-			if (s->bRequest == SET_FEATURE) {
+			if (request(s, SET_FEATURE)) {
 				USB_stall_endpoint();
 			} else {
 				USB_unstall_endpoint();
