@@ -89,7 +89,9 @@ void RAWHID_PROTOCOL_task()
 				ptr1 += nrecv;
 				n -= RAWHID_SIZE;
 			}
-			LAYOUT_set(ptr);
+			/* switched off while layout support is being
+			 * rewritten */
+			//LAYOUT_set(ptr);
 #ifdef PLATFORM_alpha
 			DATAFLASH_write_page(1, sizeof(old_n), &old_n);
 			_delay_ms(40);

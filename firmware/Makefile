@@ -18,7 +18,9 @@ SOURCES=\
 	hc595.c \
 	scanner.c \
 	matrix.c
-PLATFORMS=ikea alpha xt gh60
+# removed other platforms while layer support is being rewritten
+#PLATFORMS=ikea alpha xt gh60
+PLATFORMS=gh60
 
 all: dep
 	@for p in $(PLATFORMS); do \
