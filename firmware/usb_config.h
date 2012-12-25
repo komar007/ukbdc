@@ -6,7 +6,7 @@
 /* [Device configuration section] ------------------------------------------ */
 
 #define STR_MANUFACTURER	L"komar"
-#define STR_PRODUCT		L"komar board 0.1"
+#define STR_PRODUCT		L"GH60"
 
 #define VENDOR_ID		0x16C0
 #define PRODUCT_ID		0x047C

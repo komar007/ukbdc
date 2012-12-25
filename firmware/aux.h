@@ -19,3 +19,4 @@
 
 /* evaluates to ceil(x / n) */
 #define divceil(x, n) (((x) + (n) - 1) / (n))
+#define min(x, y) ((x) < (y) ? (x) : (y))
