@@ -104,7 +104,7 @@ void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 		state.len = buf.payload[0];
 		state.crc = *(uint16_t*)&buf.payload[1];
 		int to_copy = min(RAWHID_SIZE - MSG_HDR_SIZE - 1, state.len);
-		memcpy(state.msg, buf.payload + MSG_HDR_SIZE, to_copy);
+		memcpy((uint8_t*)state.msg, buf.payload + MSG_HDR_SIZE, to_copy);
 		state.recvd = to_copy;
 		if (state.recvd >= state.len)
 			goto check_crc;
@@ -117,11 +117,11 @@ void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 			break;
 		}
 		/* don't care if this copies more than necessary */
-		memcpy(state.msg + state.recvd, buf.payload, RAWHID_SIZE - 1);
+		memcpy((uint8_t*)state.msg + state.recvd, buf.payload, RAWHID_SIZE - 1);
 		state.recvd += RAWHID_SIZE - 1;
 		if (state.recvd >= state.len) {
 check_crc:
-			if (crc16(state.len, state.msg) != state.crc) {
+			if (crc16(state.len, (uint8_t*)state.msg) != state.crc) {
 				state.status = CRC_ERROR;
 				state.len = 0;
 			} else {

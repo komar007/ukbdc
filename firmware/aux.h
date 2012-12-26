@@ -1,10 +1,10 @@
 #pragma once
 
+#include <stddef.h>
+
 #define ARR_SZ(a) (sizeof(a) / sizeof(*(a)))
 #define LSB(n) (n & 0xff)
 #define MSB(n) ((n >> 8) & 0xff)
-
-#define offsetof(type, member)  __builtin_offsetof (type, member)
 
 /* Macro used to read a struct field from program memory (supported field
  * sizes: 1, 2 and 4 bytes) */
