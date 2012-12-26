@@ -14,17 +14,29 @@
 #define PAGE_ERASE_ADDR			(LAST_BOOT_ENTRY - 4)
 #define LOCK_WR_BITS_ADDR		(LAST_BOOT_ENTRY - 0)
 
+#define PUSH_REGS \
+	"push r0"     "\n\t" \
+	"push r1"     "\n\t" \
+	"push r16"    "\n\t" \
+	"push r17"    "\n\t" \
+
+#define POP_REGS \
+	"pop r17"     "\n\t" \
+	"pop r16"     "\n\t" \
+	"pop r1"      "\n\t" \
+	"pop r0"      "\n\t" \
+
+/* wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
+ * bootloader function */
 #define ATMEL_DFU_CALL_1ARG(addr, arg) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
-		"push r0" "\n\t"                              \
-		"push r1" "\n\t"                              \
+		PUSH_REGS                                     \
 		"mov r18, %0" "\n\t"                          \
 		"mov r17, %1" "\n\t"                          \
 		"mov r16, %2" "\n\t"                          \
 		"call %3"     "\n\t"                          \
-		"pop r1" "\n\t"                               \
-		"pop r0" "\n\t"                               \
+		POP_REGS                                      \
 		:                                             \
 		: "r" (((arg) >> 16) & 0xff),                 \
 		  "r" (((arg) >>  8) & 0xff),                 \
@@ -32,21 +44,21 @@
 		  "i" ((addr))                                \
 		: "r0", "r1", "r16", "r17", "r18",            \
 		  "r20", "r30", "r31");                       \
-}))
+}))                                                           \
 
+/* wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
+ * bootloader function and returns value returned in r16 */
 #define ATMEL_DFU_CALL_1ARG_RET(addr, arg) \
 (__extension__({                                              \
 	uint8_t ret;                                          \
 	__asm__ __volatile__(                                 \
-		"push r0" "\n\t"                              \
-		"push r1" "\n\t"                              \
+		PUSH_REGS                                     \
 		"mov r18, %1" "\n\t"                          \
 		"mov r17, %2" "\n\t"                          \
 		"mov r16, %3" "\n\t"                          \
 		"call %4"     "\n\t"                          \
 		"mov %0, r16" "\n\t"                          \
-		"pop r1" "\n\t"                               \
-		"pop r0" "\n\t"                               \
+		POP_REGS                                      \
 		: "=r" (ret)                                  \
 		: "r" (((arg) >> 16) & 0xff),                 \
 		  "r" (((arg) >>  8) & 0xff),                 \
@@ -57,18 +69,18 @@
 	ret;                                                  \
 }))
 
+/* wrapper which passes two 16-bit arguments in r17:r16 and r18:r19,
+ * respectively */
 #define ATMEL_DFU_CALL_2ARG(addr, arg1, arg2) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
-		"push r0" "\n\t"                              \
-		"push r1" "\n\t"                              \
+		PUSH_REGS                                     \
 		"mov r19, %0" "\n\t"                          \
 		"mov r18, %1" "\n\t"                          \
 		"mov r17, %2" "\n\t"                          \
 		"mov r16, %3" "\n\t"                          \
 		"call %4"     "\n\t"                          \
-		"pop r1" "\n\t"                               \
-		"pop r0" "\n\t"                               \
+		POP_REGS                                      \
 		:                                             \
 		: "r" (((arg2) >> 8) & 0xff),                 \
 		  "r" (((arg2) >> 0) & 0xff),                 \
@@ -79,6 +91,7 @@
 		  "r20", "r30", "r31");                       \
 }))
 
+/* Atmel DFU bootloader ABI calls */
 static inline void flash_page_erase_and_write(uint32_t addr)
 {
 	ATMEL_DFU_CALL_1ARG(PAGE_ERASE_AND_WRITE_ADDR, addr);
