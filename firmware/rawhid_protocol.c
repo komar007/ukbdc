@@ -1,12 +1,11 @@
 #include "rawhid_protocol.h"
 #include "atmel_bootloader.h"
-#include "platforms.h"
 #include "layout.h"
 #include "crc.h"
 #include "aux.h"
+#include "main.h"
 
 #include <avr/interrupt.h>
-#include <avr/power.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,11 +57,11 @@
  *  0x00 enter DFU mode                          none
  *  0x01 write layout page                       page number (1 byte), page
  *                                               data (128 bytes)
+ *  0x02 activate layout                         none
+ *  0x03 deactivate layout                       none
  *
  *  Device to Host:
  */
-
-#define LAYOUT_BEGIN 9984
 
 static volatile struct RAWHID_state state;
 
@@ -82,8 +81,25 @@ void RAWHID_PROTOCOL_task()
 		}
 		const uint8_t pageno = state.msg[1];
 		uint32_t addr = LAYOUT_BEGIN + pageno*SPM_PAGESIZE;
-		flash_write_page(addr, state.msg + 2);
+		flash_write_page(addr, (uint8_t*)state.msg + 2);
 		break;
+	case MESSAGE_ACTIVATE_LAYOUT:
+		if (state.len != 1) {
+			state.status = MESSAGE_ERROR;
+			return;
+		}
+		LAYOUT_set((struct layout*)LAYOUT_BEGIN);
+		break;
+	case MESSAGE_DEACTIVATE_LAYOUT:
+		if (state.len != 1) {
+			state.status = MESSAGE_ERROR;
+			return;
+		}
+		LAYOUT_deactivate();
+		break;
+	default:
+		state.status = WRONG_MESSAGE_ERROR;
+		return;
 	};
 	state.status = IDLE;
 }

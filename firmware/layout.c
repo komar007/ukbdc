@@ -5,7 +5,10 @@
 
 /* pointer to program space */
 static struct layout_key *data = NULL;
-static struct layout_state state = {.last_scancode = NULL};
+static struct layout_state state = {
+	.last_scancode = NULL,
+	.active = false
+};
 static struct layout_key *layer_cache = NULL;
 static scancode_callback_t scancode_callback = NULL;
 
@@ -29,6 +32,12 @@ void LAYOUT_set(struct layout *layout)
 	free(state.last_scancode);
 	state.last_scancode = malloc(state.num_keys);
 	load_layer(0);
+	state.active = true;
+}
+
+void LAYOUT_deactivate()
+{
+	state.active = false;
 }
 
 /* Sets the function which will be called each time a scancode should be
@@ -41,6 +50,8 @@ void LAYOUT_set_callback(scancode_callback_t callback)
 /* Sends a key press or key release event to layout */
 void LAYOUT_set_key_state(uint8_t key, bool event)
 {
+	if (!state.active)
+		return;
 	if (event == DOWN) {
 		if (layer_cache[key].scode != 0) {
 			state.last_scancode[key] = layer_cache[key].scode;

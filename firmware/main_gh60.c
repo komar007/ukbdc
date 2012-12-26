@@ -6,6 +6,7 @@
 #include <util/delay.h>
 #include <stdbool.h>
 
+#include "main.h"
 #include "usb_keyboard.h"
 #include "io.h"
 #include "hid.h"
@@ -14,9 +15,7 @@
 #include "layout.h"
 #include "matrix.h"
 
-#include <stdio.h> /* sprintf */
-
-volatile uint8_t matrix[5][14] = {
+uint8_t matrix[5][14] = {
 	{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 	{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
 	{28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41},
@@ -26,36 +25,6 @@ volatile uint8_t matrix[5][14] = {
 
 uint8_t rows[] = {0, 1, 2, 3, 4};
 uint8_t cols[] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
-
-struct layout PROGMEM scan_codes = {
-	.num_keys = 64,
-	.num_layers = 4,
-	.data = {
-		{KESC},{K1},{K2},{K3},{K4},{K5},{K6},{K7},{K8},{K9},{K0},{KMINUS},{KEQUAL},{KBACKSPACE},
-		{KTAB},{KQ},{KW},{KE},{KR},{KT},{KY},{KU},{KI},{KO},{KP},{KLEFT_BRACE},{KRIGHT_BRACE},{KBACKSLASH},
-		{KCAPS_LOCK},{KA},{KS},{KD},{KF},{KG},{KH},{KJ},{KK},{KL},{KSEMICOLON},{KQUOTE},{KBACKSLASH},{KENTER},
-		{KLEFT_SHIFT, ACT(DOWN, REL), 1, 0},{0},{KZ},{KX},{KC},{KV},{KB},{KN},{KM},{KCOMMA},{KPERIOD},{KSLASH},{0},{KRIGHT_SHIFT, ACT(DOWN, REL), 1, 0},
-		{KLEFT_CTRL},{0, ACT(DOWN, ABS), 2, 0},{KLEFT_ALT},{KSPACE},{KRIGHT_ALT},{KRIGHT_GUI},{KRIGHT_GUI},{KRIGHT_CTRL},
-
-		{KTILDE},{K1},{K2},{K3},{K4},{K5},{K6},{K7},{K8},{K9},{K0},{KMINUS},{KEQUAL},{KBACKSPACE},
-		{KTAB},{KQ},{KW},{KE},{KR},{KT},{KY},{KU},{KI},{KO},{KP},{KLEFT_BRACE},{KRIGHT_BRACE},{KBACKSLASH},
-		{KCAPS_LOCK},{KA},{KS},{KD},{KF},{KG},{KH},{KJ},{KK},{KL},{KSEMICOLON},{KQUOTE},{KBACKSLASH},{KENTER},
-		{KLEFT_SHIFT, ACT(UP, REL), 0, -1},{0},{KZ},{KX},{KC},{KV},{KB},{KN},{KM},{KCOMMA},{KPERIOD},{KSLASH},{0},{KRIGHT_SHIFT, ACT(UP, REL), 0, -1},
-		{KLEFT_CTRL},{0, ACT(DOWN, ABS), 3, 0},{KLEFT_ALT},{KSPACE},{KRIGHT_ALT},{KRIGHT_GUI},{KRIGHT_GUI},{KRIGHT_CTRL},
-
-		{KTILDE},{KF1},{KF2},{KF3},{KF4},{KF5},{KF6},{KF7},{KF8},{KF9},{KF10},{KF11},{KF12},{KDELETE},
-		{KTAB},{KQ},{KUP},{KE},{KR},{KT},{KY},{KU},{KINSERT},{KO},{KPAGE_UP},{KLEFT_BRACE},{KRIGHT_BRACE},{KBACKSLASH},
-		{KCAPS_LOCK},{KLEFT},{KDOWN},{KRIGHT},{KF},{KG},{KLEFT},{KDOWN},{KUP},{KRIGHT},{KPAGE_DOWN},{KQUOTE},{KBACKSLASH},{KENTER},
-		{KLEFT_SHIFT, ACT(DOWN, REL), 1, 0},{0},{KZ},{KX},{KC},{KV},{KB},{KN},{KM},{KCOMMA},{KPERIOD},{KSLASH},{0},{KRIGHT_SHIFT, ACT(DOWN, REL), 1, 0},
-		{KLEFT_CTRL},{0, ACT(UP, ABS), 0, 0},{KLEFT_ALT},{KSPACE},{KRIGHT_ALT},{KRIGHT_GUI},{KRIGHT_GUI},{KRIGHT_CTRL},
-
-		{KESC},{KF1},{KF2},{KF3},{KF4},{KF5},{KF6},{KF7},{KF8},{KF9},{KF10},{KF11},{KF12},{KDELETE},
-		{KTAB},{KQ},{KUP},{KE},{KR},{KT},{KY},{KU},{KINSERT},{KO},{KPAGE_UP},{KLEFT_BRACE},{KRIGHT_BRACE},{KBACKSLASH},
-		{KCAPS_LOCK},{KLEFT},{KDOWN},{KRIGHT},{KF},{KG},{KLEFT},{KDOWN},{KUP},{KRIGHT},{KPAGE_DOWN},{KQUOTE},{KBACKSLASH},{KENTER},
-		{KLEFT_SHIFT, ACT(UP, REL), 0, -1},{0},{KZ},{KX},{KC},{KV},{KB},{KN},{KM},{KCOMMA},{KPERIOD},{KSLASH},{0},{KRIGHT_SHIFT, ACT(UP, REL), 0, -1},
-		{KLEFT_CTRL},{0, ACT(UP, ABS), 0, 1},{KLEFT_ALT},{KSPACE},{KRIGHT_ALT},{KRIGHT_GUI},{KRIGHT_GUI},{KRIGHT_CTRL},
-	}
-};
 
 #define LED 19
 
@@ -75,7 +44,7 @@ int main(void)
 		IO_set(i, false); // no pull-up
 	}
 
-	LAYOUT_set(&scan_codes);
+	LAYOUT_set((struct layout*)LAYOUT_BEGIN);
 	LAYOUT_set_callback(&HID_set_scancode_state);
 
 	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &LAYOUT_set_key_state);
