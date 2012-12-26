@@ -11,13 +11,32 @@
 
 /* Message types */
 #define MESSAGE_DFU		0x00
-#define MESSAGE_SET_LAYOUT	0x01
+#define MESSAGE_WRITE_PAGE	0x01
 #define MESSAGE_SCAN_MATRIX	0x02
 #define MESSAGE_SET_MATRIX	0x03
+
+#define MSG_HDR_SIZE		3
+
+/* Statuses */
+#define IDLE			0
+#define UNEXPECTED_CONT_ERROR	1
+#define CRC_ERROR		2
+#define RECEIVING_MESSAGE	3
+#define EXECUTING		4
+#define MESSAGE_ERROR		6
+#define BUSY_ERROR		7
 
 struct RAWHID_packet {
 	uint8_t header;
 	uint8_t payload[RAWHID_SIZE - 1];
+};
+
+struct RAWHID_state {
+	uint8_t status;
+	int recvd;
+	int len;
+	uint16_t crc;
+	uint8_t msg[256];
 };
 
 void RAWHID_PROTOCOL_task();

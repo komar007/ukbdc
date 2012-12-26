@@ -1,7 +1,9 @@
 #include "rawhid_protocol.h"
+#include "atmel_bootloader.h"
 #include "platforms.h"
 #include "layout.h"
-#include "scanner.h"
+#include "crc.h"
+#include "aux.h"
 
 #include <avr/interrupt.h>
 #include <avr/power.h>
@@ -38,11 +40,12 @@
  *  The header indicates packet type:
  *  0x00     ping - the side which receives this packet should respond with
  *                  pong, even in case of an ongoing transmission of a message
- *  0x01     pong - answer to the ping message
- *  0x02     message start - the first packet of a message; the next two bytes
- *                           are the size of the message in bytes in
- *                           little-endian order; the actual message starts
- *                           from the 4th byte
+ *  0x01     pong - answer to the ping message;
+ *                  the first byte of payload is device's status byte
+ *  0x02     message start - the first packet of a message; the next byte
+ *                           is the size of the message in bytes.
+ *                           the two following bytes are the crc of the whole
+ *                           message. The actual message starts from the 5th byte
  *  0x03     message continuation - payload contains message fragment
  *  0x04     reset protocol - interrupt any message reception and sending
  *
@@ -53,86 +56,89 @@
  *  Host to Device:
  *  type description                             arguments
  *  0x00 enter DFU mode                          none
- *  0x01 set keyboard layout                     size (2 bytes)
- *                                               binary layout (size bytes)
+ *  0x01 write layout page                       page number (1 byte), page
+ *                                               data (128 bytes)
  *
  *  Device to Host:
  */
 
-/* FIXME: Temporary ugly code! */
-#ifdef PLATFORM_alpha
-#include "dataflash.h"
-#endif
+#define LAYOUT_BEGIN 9984
 
-#include <util/delay.h>
+static volatile struct RAWHID_state state;
 
 void RAWHID_PROTOCOL_task()
 {
-	struct RAWHID_packet buf;
-	if (RAWHID_recv(&buf)) {
-		switch (buf.header) {
-		case MESSAGE_DFU: {
-			TIMSK0=0;
-			USB_close();
-			__asm__("jmp 0x3800");
-			break;
-		} case MESSAGE_SET_LAYOUT: {
-			int n = buf.payload[0] + (buf.payload[1] << 8);
-			int old_n = n;
-			uint8_t *ptr = malloc(sizeof(uint8_t) * n);
-			uint8_t *ptr1 = ptr;
-			while (n > 0) {
-				while (!RAWHID_recv(&buf))
-					;
-				uint8_t nrecv = n > RAWHID_SIZE ? RAWHID_SIZE : n;
-				memcpy(ptr1, &buf, nrecv);
-				ptr1 += nrecv;
-				n -= RAWHID_SIZE;
-			}
-			/* switched off while layout support is being
-			 * rewritten */
-			//LAYOUT_set(ptr);
-#ifdef PLATFORM_alpha
-			DATAFLASH_write_page(1, sizeof(old_n), &old_n);
-			_delay_ms(40);
-			DATAFLASH_write_page(2, (uint16_t)old_n, ptr);
-#endif
-			break;
-		} case MESSAGE_SCAN_MATRIX: {
-			uint8_t timsk = TIMSK0;
-			TIMSK0 = 0;
-			struct scan_result result = SCANNER_scan(
-					buf.payload[0], &buf.payload[1],
-					buf.payload[1+buf.payload[0]], &buf.payload[2+buf.payload[0]]);
-			char msg[64] = {0};
-			msg[0] = result.status;
-			msg[1] = result.a;
-			msg[2] = result.b;
-			RAWHID_send(&msg);
-			TIMSK0 = timsk;
-			break;
-		} case MESSAGE_SET_MATRIX: {
-			int n = buf.payload[0] + (buf.payload[1] << 8);
-			int old_n = n;
-			extern uint8_t matrix[19][8];
-			uint8_t *ptr1 = matrix;
-			while (n > 0) {
-				while (!RAWHID_recv(&buf))
-					;
-				uint8_t nrecv = n > RAWHID_SIZE ? RAWHID_SIZE : n;
-				memcpy(ptr1, &buf, nrecv);
-				ptr1 += nrecv;
-				n -= RAWHID_SIZE;
-			}
-#ifdef PLATFORM_alpha
-			DATAFLASH_write_page(0, old_n, (uint8_t*)matrix);
-#endif
-			break;
+	if (state.status != EXECUTING)
+		return;
+	uint8_t hdr = state.msg[0];
+	switch (hdr) {
+	case MESSAGE_DFU:
+		run_bootloader();
+		break; /* well... */
+	case MESSAGE_WRITE_PAGE:
+		if (state.len != SPM_PAGESIZE + 2) {
+			state.status = MESSAGE_ERROR;
+			return;
 		}
-		}
-	}
+		const uint8_t pageno = state.msg[1];
+		uint32_t addr = LAYOUT_BEGIN + pageno*SPM_PAGESIZE;
+		flash_write_page(addr, state.msg + 2);
+		break;
+	};
+	state.status = IDLE;
 }
 
 void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 {
+	struct RAWHID_packet buf;
+	if (!RAWHID_recv(&buf))
+		return;
+	switch (buf.header) {
+	case MSG_START:
+		if (state.status == EXECUTING) {
+			state.status = BUSY_ERROR;
+			break;
+		} else if (state.status != IDLE) {
+			break;
+		}
+		state.len = buf.payload[0];
+		state.crc = *(uint16_t*)&buf.payload[1];
+		int to_copy = min(RAWHID_SIZE - MSG_HDR_SIZE - 1, state.len);
+		memcpy(state.msg, buf.payload + MSG_HDR_SIZE, to_copy);
+		state.recvd = to_copy;
+		if (state.recvd >= state.len)
+			goto check_crc;
+		else
+			state.status = RECEIVING_MESSAGE;
+		break;
+	case MSG_CONT:
+		if (state.status != RECEIVING_MESSAGE) {
+			state.status = UNEXPECTED_CONT_ERROR;
+			break;
+		}
+		/* don't care if this copies more than necessary */
+		memcpy(state.msg + state.recvd, buf.payload, RAWHID_SIZE - 1);
+		state.recvd += RAWHID_SIZE - 1;
+		if (state.recvd >= state.len) {
+check_crc:
+			if (crc16(state.len, state.msg) != state.crc) {
+				state.status = CRC_ERROR;
+				state.len = 0;
+			} else {
+				state.status = EXECUTING;
+			}
+		}
+		break;
+	case PING:
+		buf.header = PONG;
+		buf.payload[0] = state.status;
+		*(uint32_t*)(buf.payload + 1) = pgm_read_dword(LAYOUT_BEGIN);
+		RAWHID_send(&buf);
+		break;
+	case RESET_PROTO:
+		state.len = 0;
+		state.recvd = 0;
+		state.status = IDLE;
+		break;
+	}
 }

@@ -18,7 +18,8 @@ SOURCES=\
 	hc595.c \
 	scanner.c \
 	matrix.c \
-	atmel_bootloader.c
+	atmel_bootloader.c \
+	crc.c
 # removed other platforms while layer support is being rewritten
 #PLATFORMS=ikea alpha xt gh60
 PLATFORMS=gh60
@@ -81,6 +82,7 @@ bin/ukbdc-gh60.elf: \
 	bin/platforms/gh60/rawhid_protocol.o \
 	bin/platforms/gh60/matrix.o \
 	bin/platforms/gh60/scanner.o \
+	bin/platforms/gh60/crc.o \
 	bin/platforms/gh60/atmel_bootloader.o \
 	bin/platforms/gh60/layout.o
 	@echo LINK $@
@@ -136,7 +138,7 @@ program-alpha: bin/ukbdc-alpha.hex
 	sudo dfu-programmer atmega32u4 start
 
 program-gh60: bin/ukbdc-gh60.hex
-	sudo ../ukbdc_cli/bin/ukbdc_cli /dev/hidraw1 dfu
+	#sudo ../ukbdc_cli/bin/ukbdc_cli /dev/hidraw1 dfu
 	sleep 2
 	sudo dfu-programmer atmega32u4 erase
 	sudo dfu-programmer atmega32u4 flash bin/ukbdc-gh60.hex
