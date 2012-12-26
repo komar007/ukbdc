@@ -208,7 +208,7 @@ static inline bool process_class_interface_requests(struct setup_packet *s)
 	for (uint8_t i = 0; i < NUM_INTERFACE_REQUEST_HANDLERS; ++i) {
 		if (get_pgm_struct_field(&iface_req_handlers[i], iface_num) ==
 				(s->wIndex & 0xFF)) {
-			interface_request_handler_fun handler =
+			interface_request_handler_fun handler = (void*)(uint16_t)
 				get_pgm_struct_field(&iface_req_handlers[i], f);
 			found = (*handler)(s);
 			break;
@@ -259,8 +259,8 @@ ISR(USB_COM_vect)
 				&endpoint_int_handlers[i], endpoint_num);
 		USB_set_endpoint(endpoint_number);
 		if (UEINTX & ENDPOINT_EVENTS) {
-			void (*fun)(uint8_t flags) = get_pgm_struct_field(
-					&endpoint_int_handlers[i], f);
+			void (*fun)(uint8_t flags) = (void*)(uint16_t)
+				get_pgm_struct_field(&endpoint_int_handlers[i], f);
 			(*fun)(UEINTX);
 		}
 	}
