@@ -1,3 +1,6 @@
+#pragma once
+
+#include <avr/io.h>
 #include <stdint.h>
 
 #define LAST_BOOT_ENTRY (FLASHEND - 3)
@@ -14,51 +17,65 @@
 #define ATMEL_DFU_CALL_1ARG(addr, arg) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
+		"push r0" "\n\t"                              \
+		"push r1" "\n\t"                              \
 		"mov r18, %0" "\n\t"                          \
 		"mov r17, %1" "\n\t"                          \
 		"mov r16, %2" "\n\t"                          \
 		"call %3"     "\n\t"                          \
+		"pop r1" "\n\t"                               \
+		"pop r0" "\n\t"                               \
 		:                                             \
 		: "r" (((arg) >> 16) & 0xff),                 \
 		  "r" (((arg) >>  8) & 0xff),                 \
 		  "r" (((arg) >>  0) & 0xff),                 \
 		  "i" ((addr))                                \
-		: "r16", "r17", "r18", "r20", "r30", "r31");  \
+		: "r0", "r1", "r16", "r17", "r18",            \
+		  "r20", "r30", "r31");                       \
 }))
 
 #define ATMEL_DFU_CALL_1ARG_RET(addr, arg) \
 (__extension__({                                              \
 	uint8_t ret;                                          \
 	__asm__ __volatile__(                                 \
+		"push r0" "\n\t"                              \
+		"push r1" "\n\t"                              \
 		"mov r18, %1" "\n\t"                          \
 		"mov r17, %2" "\n\t"                          \
 		"mov r16, %3" "\n\t"                          \
 		"call %4"     "\n\t"                          \
 		"mov %0, r16" "\n\t"                          \
+		"pop r1" "\n\t"                               \
+		"pop r0" "\n\t"                               \
 		: "=r" (ret)                                  \
 		: "r" (((arg) >> 16) & 0xff),                 \
 		  "r" (((arg) >>  8) & 0xff),                 \
 		  "r" (((arg) >>  0) & 0xff),                 \
 		  "i" ((addr))                                \
-		: "r16", "r17", "r18", "r20", "r30", "r31");  \
+		: "r0", "r1", "r16", "r17", "r18",            \
+		  "r20", "r30", "r31");                       \
 	ret;                                                  \
 }))
 
 #define ATMEL_DFU_CALL_2ARG(addr, arg1, arg2) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
+		"push r0" "\n\t"                              \
+		"push r1" "\n\t"                              \
 		"mov r19, %0" "\n\t"                          \
 		"mov r18, %1" "\n\t"                          \
 		"mov r17, %2" "\n\t"                          \
 		"mov r16, %3" "\n\t"                          \
 		"call %4"     "\n\t"                          \
+		"pop r1" "\n\t"                               \
+		"pop r0" "\n\t"                               \
 		:                                             \
 		: "r" (((arg2) >> 8) & 0xff),                 \
 		  "r" (((arg2) >> 0) & 0xff),                 \
-		  "r" (((arg1) >> 8) & 0xff),                 \
 		  "r" (((arg1) >> 0) & 0xff),                 \
+		  "r" (((arg1) >> 8) & 0xff),                 \
 		  "i" ((addr))                                \
-		: "r16", "r17", "r18", "r19",                 \
+		: "r0", "r1", "r16", "r17", "r18", "r19",     \
 		  "r20", "r30", "r31");                       \
 }))
 
@@ -74,9 +91,9 @@ static inline uint8_t flash_read_fuse(uint32_t addr)
 {
 	return ATMEL_DFU_CALL_1ARG_RET(READ_FUSE_ADDR, addr);
 }
-static inline void flash_fill_temp_buffer(uint16_t addr, uint16_t data)
+static inline void flash_fill_temp_buffer(uint16_t data, uint16_t addr)
 {
-	ATMEL_DFU_CALL_2ARG(FILL_TEMP_BUFFER_ADDR, addr, data);
+	ATMEL_DFU_CALL_2ARG(FILL_TEMP_BUFFER_ADDR, data, addr);
 }
 static inline void flash_prg_page(uint32_t addr)
 {
@@ -124,3 +141,5 @@ static inline void run_bootloader()
 		  "r" ((bladdr >> 8) & 0xff)
 		: "r30", "r31");
 }
+
+void flash_write_page(uint32_t addr, const uint8_t *data);

@@ -17,7 +17,8 @@ SOURCES=\
 	layout.c\
 	hc595.c \
 	scanner.c \
-	matrix.c
+	matrix.c \
+	atmel_bootloader.c
 # removed other platforms while layer support is being rewritten
 #PLATFORMS=ikea alpha xt gh60
 PLATFORMS=gh60
@@ -80,6 +81,7 @@ bin/ukbdc-gh60.elf: \
 	bin/platforms/gh60/rawhid_protocol.o \
 	bin/platforms/gh60/matrix.o \
 	bin/platforms/gh60/scanner.o \
+	bin/platforms/gh60/atmel_bootloader.o \
 	bin/platforms/gh60/layout.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
