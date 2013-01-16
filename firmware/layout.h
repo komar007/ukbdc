@@ -45,7 +45,8 @@ struct layout_state {
 
 typedef void (*scancode_callback_t)(uint8_t code, bool state);
 
-void LAYOUT_set(struct layout *layout);
+void LAYOUT_init(int num_keys);
+int LAYOUT_set(struct layout *layout);
 void LAYOUT_set_callback(scancode_callback_t callback);
 void LAYOUT_set_key_state(uint8_t key, bool state);
 void LAYOUT_deactivate();

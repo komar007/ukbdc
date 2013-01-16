@@ -21,18 +21,24 @@ void load_layer(uint8_t num)
 	state.cur_layer = num;
 }
 
-/* Sets current layout */
-void LAYOUT_set(struct layout *layout)
+void LAYOUT_init(int num_keys)
 {
-	state.num_keys = get_pgm_struct_field(layout, num_keys);
+	state.num_keys = num_keys;
+	layer_cache = malloc(sizeof(*layer_cache) * num_keys);
+	state.last_scancode = malloc(num_keys);
+}
+
+/* Sets current layout */
+int LAYOUT_set(struct layout *layout)
+{
+	uint8_t num_keys = get_pgm_struct_field(layout, num_keys);
+	if (num_keys != state.num_keys)
+		return -1;
 	state.num_layers = get_pgm_struct_field(layout, num_layers);
 	data = layout->data;
-	free(layer_cache);
-	layer_cache = malloc(sizeof(*layer_cache) * state.num_keys);
-	free(state.last_scancode);
-	state.last_scancode = malloc(state.num_keys);
 	load_layer(0);
 	state.active = true;
+	return 0;
 }
 
 void LAYOUT_deactivate()

@@ -44,14 +44,25 @@ int main(void)
 		IO_set(i, false); // no pull-up
 	}
 
-	LAYOUT_set((struct layout*)LAYOUT_BEGIN);
-	LAYOUT_set_callback(&HID_set_scancode_state);
-
-	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &LAYOUT_set_key_state);
-
 	USB_init();
 	while (USB_get_configuration() == 0)
 		;
+
+	/* initialize with 64 keys */
+	LAYOUT_init(64);
+
+	int ret = LAYOUT_set((struct layout*)LAYOUT_BEGIN);
+	if (ret != 0) {
+		for (int i = 0; i < 30; ++i) {
+			IO_set(LED, false);
+			_delay_ms(100);
+			IO_set(LED, true);
+			_delay_ms(100);
+		}
+	}
+	LAYOUT_set_callback(&HID_set_scancode_state);
+
+	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &LAYOUT_set_key_state);
 
 	HID_commit_state();
 
