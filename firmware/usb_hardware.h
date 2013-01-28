@@ -26,7 +26,7 @@ static inline void USB_set_pads_regulator(bool state)
 	UHWCON |= _BV(UIMOD);
 #endif
 /* AT90UB162 does not have UHWCON */
-#if ! defined(__AVR_AT90USB162__)
+#if ! defined(__AVR_AT90USB162__) && ! defined(__AVR_ATmega32U2__)
 	if (state)
 		UHWCON |= _BV(UVREGE);
 	else
@@ -52,7 +52,7 @@ static inline void USB_pll_config(enum crystal_config crystal)
 #elif defined(__AVR_AT90USB1286__)
 		/* set PLL input prescaler to 1:8 (other config than for AT90USB646) */
 		PLLCSR = _BV(PLLP2) | _BV(PLLP0);
-#elif defined(__AVR_AT90USB162__)
+#elif defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__)
 		/* set PLL input prescaler to 1:2 */
 		PLLCSR = _BV(PLLP0);
 #endif
@@ -64,7 +64,7 @@ static inline void USB_pll_config(enum crystal_config crystal)
 #elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)
 		/* set PLL input prescaler to 1:4 */
 		PLLCSR = _BV(PLLP1) | _BV(PLLP0);
-#elif defined(__AVR_AT90USB162__)
+#elif defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__)
 		/* set PLL input prescaler to 1:1 */
 		PLLCSR = 0;
 #endif
@@ -77,7 +77,7 @@ static inline void USB_pll_config(enum crystal_config crystal)
 /* Start the USB controller */
 static inline void USB_enable()
 {
-#if defined(__AVR_AT90USB162__)
+#if defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__)
 	/* USB macro enable */
 	USBCON |= _BV(USBE);
 	/* unfreeze USB clock */
@@ -93,7 +93,7 @@ static inline void USB_enable()
 /* Stop the USB controller */
 static inline void USB_disable()
 {
-#if defined(__AVR_AT90USB162__)
+#if defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__)
 	/* USB macro disable */
 	USBCON &= ~_BV(USBE);
 #else

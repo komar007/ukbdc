@@ -21,7 +21,11 @@ void USB_init()
 		;
         USB_enable();
 	/* make sure DETACH is off, and low speed mode is not set */
+#if defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__)
+	UDCON &= ~(_BV(DETACH));
+#else
 	UDCON &= ~(_BV(DETACH) | _BV(LSM));
+#endif
 	usb_current_conf = 0;
         UDIEN = _BV(EORSTE) | _BV(SOFE);
 	sei();
@@ -32,7 +36,7 @@ void USB_close()
 {
         UDIEN &= ~(_BV(EORSTE) | _BV(SOFE));
 	usb_current_conf = 0;
-	UDCON |= _BV(DETACH) | _BV(LSM);
+	UDCON |= _BV(DETACH);
         USB_disable();
 	USB_set_pads_regulator(false);
 }

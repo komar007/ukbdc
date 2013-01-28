@@ -68,9 +68,9 @@ struct endpoint_interrupt_handler {
 #define NUM_ENDPOINT_INTERRUPT_HANDLERS		1
 #define NUM_SOF_HANDLERS			2
 
-extern struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];
-extern struct interface_request_handler iface_req_handlers[];
-extern struct endpoint_interrupt_handler PROGMEM endpoint_int_handlers[];
+extern const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];
+extern const struct interface_request_handler iface_req_handlers[];
+extern const struct endpoint_interrupt_handler PROGMEM endpoint_int_handlers[];
 extern struct sof_handler sof_handlers[];
 
 /* [/API section] ---------------------------------------------------------- */

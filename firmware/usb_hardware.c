@@ -65,6 +65,8 @@ bool USB_configure_endpoint(uint8_t num)
 	UECONX  = _BV(EPEN);
 	UECFG0X = get_pgm_struct_field(&endpoint_configs[i], type);
 	UECFG1X = get_pgm_struct_field(&endpoint_configs[i], config);
+	if (bit_is_clear(UESTA0X, CFGOK))
+		return false;
 	/* set interrupt enable bits */
 	UEIENX  = get_pgm_struct_field(&endpoint_configs[i], int_flags);
 	return true;

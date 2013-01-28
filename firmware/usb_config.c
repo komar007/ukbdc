@@ -1,7 +1,7 @@
 #include "usb_config.h"
 #include <avr/pgmspace.h>
 
-struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
+const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 	{.num = 0,
 		.type = EP_TYPE_CONTROL,
 		.config = EP_SIZE_32 | EP_SINGLE_BUFFER,
@@ -24,14 +24,14 @@ struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 #include "rawhid.h"
 #include "rawhid_protocol.h"
 #include "main.h"
-struct interface_request_handler PROGMEM
+const struct interface_request_handler PROGMEM
 iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 	{.iface_num = KEYBOARD_INTERFACE,
 		.f = &HID_handle_control_request},
 	{.iface_num = RAWHID_INTERFACE,
 		.f = &RAWHID_handle_control_request}
 };
-struct endpoint_interrupt_handler PROGMEM
+const struct endpoint_interrupt_handler PROGMEM
 endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
 	{.endpoint_num = RAWHID_RX_ENDPOINT,
 		.f = &RAWHID_PROTOCOL_handle_packet}
