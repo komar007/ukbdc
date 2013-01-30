@@ -88,7 +88,7 @@ void RAWHID_PROTOCOL_task()
 			state.status = MESSAGE_ERROR;
 			return;
 		}
-		LAYOUT_set((struct layout*)LAYOUT_BEGIN);
+		LAYOUT_set((const struct layout*)LAYOUT_BEGIN);
 		break;
 	case MESSAGE_DEACTIVATE_LAYOUT:
 		if (state.len != 1) {

@@ -37,7 +37,7 @@ struct RAWHID_state {
 	int recvd;
 	int len;
 	uint16_t crc;
-	uint8_t msg[256];
+	uint8_t msg[130];
 };
 
 void RAWHID_PROTOCOL_task();

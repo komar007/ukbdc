@@ -34,9 +34,9 @@ struct layout {
 
 struct layout_state {
 	bool active;
-	int num_keys;
-	int num_layers;
-	int cur_layer;
+	uint8_t num_keys;
+	uint8_t num_layers;
+	uint8_t cur_layer;
 	/* last scancode sent by each key
 	 * this is to make sure a scancode is released even if a key is
 	 * released on a different layer */
@@ -45,8 +45,8 @@ struct layout_state {
 
 typedef void (*scancode_callback_t)(uint8_t code, bool state);
 
-void LAYOUT_init(int num_keys);
-int LAYOUT_set(struct layout *layout);
+int LAYOUT_init(int num_keys);
+int LAYOUT_set(const struct layout *layout);
 void LAYOUT_set_callback(scancode_callback_t callback);
 void LAYOUT_set_key_state(uint8_t key, bool state);
 void LAYOUT_deactivate();

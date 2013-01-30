@@ -50,4 +50,19 @@ struct pin_config PINS[NUM_IO] = {
 
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB2)}  // caps
 #endif
+
+#ifdef PLATFORM_ghpad
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB4)}, // r1
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB6)}, // r2
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB3)}, // r3
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB5)}, // r4
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB7)}, // r5
+
+	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD6)}, // c1
+	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD4)}, // c2
+	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD5)}, // c3
+	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD3)}, // c4
+
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB2)}  // caps
+#endif
 };

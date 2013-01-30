@@ -29,6 +29,8 @@
 	#define NUM_IO			19
 #elif defined(PLATFORM_gh60)
 	#define NUM_IO			20
+#elif defined(PLATFORM_ghpad)
+	#define NUM_IO			10
 #else
 	#define NUM_IO			0
 #endif

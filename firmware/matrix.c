@@ -50,6 +50,11 @@ bool MATRIX_scan()
 		IO_config(row_nums[i], INPUT);
 		IO_set(row_nums[i], false);
 	}
+	/* set all columns to input with pull-ups */
+	for (uint8_t i = 0; i < ncols; ++i) {
+		IO_config(col_nums[i], INPUT);
+		IO_set(col_nums[i], true);
+	}
 	bool changed = false;
 	/* scan the matrix */
 	for (uint8_t i = 0; i < nrows; ++i) {

@@ -5,6 +5,7 @@ SOURCES=\
 	main_alpha.c\
 	main_xt.c \
 	main_gh60.c \
+	main_ghpad.c \
 	io.c\
 	platforms.c\
 	usb.c\
@@ -37,6 +38,8 @@ xt: prep
 	make bin/ukbdc-xt.hex
 gh60: prep
 	make bin/ukbdc-gh60.hex
+ghpad: prep
+	make bin/ukbdc-ghpad.hex
 
 prep:
 	@for p in $(PLATFORMS); do \
@@ -85,6 +88,23 @@ bin/ukbdc-gh60.elf: \
 	bin/platforms/gh60/crc.o \
 	bin/platforms/gh60/atmel_bootloader.o \
 	bin/platforms/gh60/layout.o
+	@echo LINK $@
+	@$(CC) -o $@ $^
+
+bin/ukbdc-ghpad.elf: \
+	bin/platforms/ghpad/main_ghpad.o \
+	bin/platforms/ghpad/io.o \
+	bin/platforms/ghpad/platforms.o \
+	bin/platforms/ghpad/usb.o \
+	bin/platforms/ghpad/usb_config.o \
+	bin/platforms/ghpad/usb_hardware.o \
+	bin/platforms/ghpad/hid.o \
+	bin/platforms/ghpad/rawhid.o \
+	bin/platforms/ghpad/rawhid_protocol.o \
+	bin/platforms/ghpad/matrix.o \
+	bin/platforms/ghpad/crc.o \
+	bin/platforms/ghpad/atmel_bootloader.o \
+	bin/platforms/ghpad/layout.o
 	@echo LINK $@
 	@$(CC) -o $@ $^
 

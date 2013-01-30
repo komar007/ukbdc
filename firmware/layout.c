@@ -4,7 +4,7 @@
 #include <avr/pgmspace.h>
 
 /* pointer to program space */
-static struct layout_key *data = NULL;
+static const struct layout_key *data = NULL;
 static struct layout_state state = {
 	.last_scancode = NULL,
 	.active = false
@@ -21,15 +21,16 @@ void load_layer(uint8_t num)
 	state.cur_layer = num;
 }
 
-void LAYOUT_init(int num_keys)
+int LAYOUT_init(int num_keys)
 {
 	state.num_keys = num_keys;
 	layer_cache = malloc(sizeof(*layer_cache) * num_keys);
 	state.last_scancode = malloc(num_keys);
+	return 0;
 }
 
 /* Sets current layout */
-int LAYOUT_set(struct layout *layout)
+int LAYOUT_set(const struct layout *layout)
 {
 	uint8_t num_keys = get_pgm_struct_field(layout, num_keys);
 	if (num_keys != state.num_keys)

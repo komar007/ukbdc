@@ -19,8 +19,6 @@ static volatile uint8_t keyboard_leds=0;
 static volatile uint8_t key_map[32] = {0};
 static volatile uint8_t six_keys[6] = {0};
 
-#include "io.h"
-
 void HID_send_boot_report()
 {
 	/* Send byte 28 of key_map, which is the state of modifiers */
