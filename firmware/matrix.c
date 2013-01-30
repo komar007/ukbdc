@@ -68,7 +68,7 @@ bool MATRIX_scan()
 			set_state(i, j, state);
 			callback(matrix[i*ncols + j], state);
 		}
-		IO_config(i, INPUT);
+		IO_config(row_nums[i], INPUT);
 	}
 	return changed;
 }
