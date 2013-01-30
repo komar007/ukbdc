@@ -110,7 +110,7 @@ void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 	if (!RAWHID_recv(&buf))
 		return;
 	switch (buf.header) {
-	case MSG_START:
+	case MSG_START: {
 		if (state.status == EXECUTING) {
 			state.status = BUSY_ERROR;
 			break;
@@ -119,7 +119,7 @@ void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 		}
 		state.len = buf.payload[0];
 		state.crc = *(uint16_t*)&buf.payload[1];
-		int to_copy = min(RAWHID_SIZE - MSG_HDR_SIZE - 1, state.len);
+		const int to_copy = min(RAWHID_SIZE - MSG_HDR_SIZE - 1, state.len);
 		memcpy((uint8_t*)state.msg, buf.payload + MSG_HDR_SIZE, to_copy);
 		state.recvd = to_copy;
 		if (state.recvd >= state.len)
@@ -127,13 +127,13 @@ void RAWHID_PROTOCOL_handle_packet(uint8_t __attribute__((unused)) flags)
 		else
 			state.status = RECEIVING_MESSAGE;
 		break;
-	case MSG_CONT:
+	} case MSG_CONT: {
 		if (state.status != RECEIVING_MESSAGE) {
 			state.status = UNEXPECTED_CONT_ERROR;
 			break;
 		}
-		/* don't care if this copies more than necessary */
-		memcpy((uint8_t*)state.msg + state.recvd, buf.payload, RAWHID_SIZE - 1);
+		const int to_copy = min(RAWHID_SIZE - 1, state.len - state.recvd);
+		memcpy((uint8_t*)state.msg + state.recvd, buf.payload, to_copy);
 		state.recvd += RAWHID_SIZE - 1;
 		if (state.recvd >= state.len) {
 check_crc:
@@ -145,13 +145,13 @@ check_crc:
 			}
 		}
 		break;
-	case PING:
+	} case PING: {
 		buf.header = PONG;
 		buf.payload[0] = state.status;
 		*(uint32_t*)(buf.payload + 1) = pgm_read_dword(LAYOUT_BEGIN);
 		RAWHID_send(&buf);
 		break;
-	case RESET_PROTO:
+	} case RESET_PROTO:
 		state.len = 0;
 		state.recvd = 0;
 		state.status = IDLE;
