@@ -28,21 +28,14 @@ uint8_t cols[] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
 
 #define LED 19
 
+volatile bool should_scan = false;
+
 int main(void)
 {
 	clock_prescale_set(clock_div_1);
 
 	IO_config(LED, OUTPUT);
 	IO_set(LED, true);
-
-	for (int i = 5; i < 19; ++i) {
-		IO_config(i, INPUT);
-		IO_set(i, true);
-	}
-	for (int i = 0; i < 5; ++i) {
-		IO_config(i, INPUT);
-		IO_set(i, false); // no pull-up
-	}
 
 	USB_init();
 	while (USB_get_configuration() == 0)
@@ -65,11 +58,27 @@ int main(void)
 	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &LAYOUT_set_key_state);
 
 	HID_commit_state();
+	for (int i = 0; i < 30; ++i) {
+		IO_set(LED, false);
+		_delay_ms(50);
+		IO_set(LED, true);
+		_delay_ms(50);
+	}
 
 	TCCR0A = 0x00;
 	TCCR0B = 0x03; /* clk_io / 64 */
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
+		if (should_scan) {
+			should_scan = false;
+			bool changed = MATRIX_scan();
+			if (changed)
+				HID_commit_state();
+			if (HID_get_leds() & 0x02)
+				IO_set(LED, false);
+			else
+				IO_set(LED, true);
+		}
 		RAWHID_PROTOCOL_task();
 	}
 
@@ -83,19 +92,11 @@ void MAIN_handle_sof()
 
 ISR(TIMER0_OVF_vect)
 {
-	uint8_t prev_endp = USB_get_endpoint();
 	static uint8_t num = 0;
 	if (num > 16) {
 		num = 0;
-		bool changed = MATRIX_scan();
-		if (changed)
-			HID_commit_state();
-		if (HID_get_leds() & 0x02)
-			IO_set(LED, false);
-		else
-			IO_set(LED, true);
+		should_scan = true;
 	} else {
 		++num;
 	}
-	USB_set_endpoint(prev_endp);
 }
