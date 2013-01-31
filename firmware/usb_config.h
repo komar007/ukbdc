@@ -30,7 +30,11 @@
 #define RAWHID_INTERFACE	1
 
 #define RAWHID_TX_ENDPOINT	2
-#define RAWHID_SIZE		32	// transmit/receive packet size
+#ifdef PLATFORM_ghpad
+	#define RAWHID_SIZE		32	// transmit/receive packet size
+#else
+	#define RAWHID_SIZE		64	// transmit/receive packet size
+#endif
 #define RAWHID_TX_INTERVAL	2	// max # of ms between transmit packets
 
 #define RAWHID_RX_ENDPOINT	3

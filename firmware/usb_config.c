@@ -12,11 +12,19 @@ const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 		.int_flags = 0x00},
 	{.num = RAWHID_TX_ENDPOINT,
 		.type = EP_TYPE_INTERRUPT_IN,
+#ifdef PLATFORM_ghpad
 		.config = EP_SIZE_32 | EP_SINGLE_BUFFER,
+#else
+		.config = EP_SIZE_64 | EP_DOUBLE_BUFFER,
+#endif
 		.int_flags = 0x00},
 	{.num = RAWHID_RX_ENDPOINT,
 		.type = EP_TYPE_INTERRUPT_OUT,
+#ifdef PLATFORM_ghpad
 		.config = EP_SIZE_32 | EP_SINGLE_BUFFER,
+#else
+		.config = EP_SIZE_64 | EP_DOUBLE_BUFFER,
+#endif
 		.int_flags = _BV(RXOUTE)}
 };
 
