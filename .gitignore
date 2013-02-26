@@ -2,3 +2,6 @@
 *.hex
 *.elf
 *.sw[pon]
+obj/
+bin/
+tmp/
