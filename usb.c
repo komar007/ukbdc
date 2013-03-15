@@ -2,12 +2,15 @@
 #include "usb.h"
 #include "usb_config.h"
 #include "descriptors.h"
+#include "platforms.h"
 
 #include <stdint.h>
 #include <avr/interrupt.h>
 
 /* current USB configuration chosen by host (0 means no config chosen yet) */
 static volatile uint8_t usb_current_conf = 0;
+static volatile bool usb_sleeping = false;
+static volatile uint16_t status = 0x0000;
 
 /* [Public API section] ---------------------------------------------------- */
 
@@ -27,8 +30,12 @@ void USB_init()
 	UDCON &= ~(_BV(DETACH) | _BV(LSM));
 #endif
 	usb_current_conf = 0;
-        UDIEN = _BV(EORSTE) | _BV(SOFE);
+        UDIEN = _BV(EORSTE) | _BV(EORSME) | _BV(SOFE);
 	sei();
+	while (USB_get_configuration() == 0)
+		;
+	/* enable USB suspend interrupt */
+	UDIEN |= _BV(SUSPE);
 }
 
 /* deinitialize USB */
@@ -48,6 +55,24 @@ uint8_t USB_get_configuration()
 	return usb_current_conf;
 }
 
+/* return true if the computer is in sleep mode */
+bool USB_is_sleeping()
+{
+	return usb_sleeping;
+}
+
+/* send remote wakeup to the computer */
+void USB_wakeup()
+{
+	if (USB_is_sleeping()) {
+		UDCON |= _BV(RMWKUP);
+		while (bit_is_set(UDCON, RMWKUP))
+			;
+		while (USB_is_sleeping())
+			;
+	}
+}
+
 /* [/Public API section] --------------------------------------------------- */
 
 /* [Interrupt handlers section] -------------------------------------------- */
@@ -59,7 +84,7 @@ ISR(USB_GEN_vect)
 	uint8_t prev_endp = USB_get_endpoint();
         uint8_t device_int_flags = UDINT;
 	/* clear all device interrupt flags */
-        UDINT = 0x00;
+	UDINT = 0x00;
         if (device_int_flags & _BV(EORSTI)) {
 		/* on end of reset configure endpoint 0 */
 		USB_configure_endpoint(0);
@@ -70,6 +95,12 @@ ISR(USB_GEN_vect)
 		/* call all SOF handlers */
 		for (uint8_t i = 0; i < NUM_SOF_HANDLERS; ++i)
 			(*sof_handlers[i].f)();
+	}
+	if (device_int_flags & _BV(SUSPI)) {
+		usb_sleeping = true;
+	}
+	if (device_int_flags & _BV(EORSMI)) {
+		usb_sleeping = false;
 	}
 end:
 	USB_set_endpoint(prev_endp);
@@ -148,6 +179,12 @@ static inline bool process_standard_device_requests(struct setup_packet *s)
 		USB_control_read_complete_status_stage();
 	} else if (request(s, GET_DESCRIPTOR)) {
 		serve_get_descriptor(s->wValue, s->wIndex, s->wLength);
+	} else if (request(s, SET_FEATURE) &&
+			s->wValue == DEVICE_REMOTE_WAKEUP) {
+		status |= 0x0002;
+	} else if (request(s, CLEAR_FEATURE) &&
+			s->wValue == DEVICE_REMOTE_WAKEUP) {
+		status &= ~0x0002;
 	} else {
 		return false;
 	}

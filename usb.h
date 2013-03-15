@@ -43,6 +43,8 @@
 /* The only available in USB endpoint feature selector */
 #define ENDPOINT_HALT			0x00
 
+#define DEVICE_REMOTE_WAKEUP		0x01
+
 struct setup_packet {
 	uint8_t  bmRequestType;
 	uint8_t  bRequest;
@@ -87,4 +89,6 @@ static inline void USB_control_read_complete_status_stage()
 
 void USB_init();
 void USB_close();
+bool USB_is_sleeping();
+void USB_wakeup();
 uint8_t USB_get_configuration();

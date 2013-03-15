@@ -30,16 +30,22 @@ uint8_t cols[] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
 
 volatile bool should_scan = false;
 
+void on_key_press(uint8_t key, bool event)
+{
+	if (USB_is_sleeping())
+		USB_wakeup();
+	else
+		LAYOUT_set_key_state(key, event);
+}
+
 int main(void)
 {
-	clock_prescale_set(clock_div_1);
+	clock_prescale_set(clock_div_4);
 
 	IO_config(LED, OUTPUT);
 	IO_set(LED, true);
 
 	USB_init();
-	while (USB_get_configuration() == 0)
-		;
 
 	/* initialize with 64 keys */
 	LAYOUT_init(64);
@@ -47,12 +53,12 @@ int main(void)
 	LAYOUT_set((struct layout*)LAYOUT_BEGIN);
 	LAYOUT_set_callback(&HID_set_scancode_state);
 
-	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &LAYOUT_set_key_state);
+	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &on_key_press);
 
 	HID_commit_state();
 
 	TCCR0A = 0x00;
-	TCCR0B = 0x03; /* clk_io / 64 */
+	TCCR0B = 0x02; /* clk_io / 8 */
 	TIMSK0 = _BV(TOIE0);
 	while(1) {
 		if (should_scan) {

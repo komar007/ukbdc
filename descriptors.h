@@ -163,7 +163,7 @@ static const uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	2,					// bNumInterfaces
 	1,					// bConfigurationValue
 	0,					// iConfiguration
-	0xC0,					// bmAttributes
+	0xA0,					// bmAttributes
 	50,					// bMaxPower
 	/* HID keyboard */
 	// interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
