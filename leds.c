@@ -40,7 +40,7 @@ void LED_set_indicators(uint8_t hid_leds)
 
 static const int brightness[] = {0, 1, 2, 3, 4, 6, 8, 12, 16, 25, 33, 50, 66, 100, 127};
 
-void LED_update()
+void LED_timer_slow_handler()
 {
 	for (int i = 0; i < NUM_LEDS; ++i) {
 		if (leds[i].pin == -1)
@@ -64,17 +64,7 @@ void LED_update()
 	}
 }
 
-void LED_handle_sof()
-{
-	static int time = 0;
-	++time;
-	if (time == 10) {
-		LED_update();
-		time = 0;
-	}
-}
-
-ISR(TIMER0_OVF_vect)
+void LED_timer_pwm_handler()
 {
 	static int phase = 0;
 	if (phase > 127) {

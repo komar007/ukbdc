@@ -24,3 +24,5 @@ void LED_init();
 void LED_set(uint8_t led, bool state);
 void LED_handle_sof();
 void LED_set_indicators(uint8_t hid_leds);
+void LED_timer_pwm_handler();
+void LED_timer_slow_handler();

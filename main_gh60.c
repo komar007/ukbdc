@@ -14,6 +14,7 @@
 #include "rawhid_protocol.h"
 #include "layout.h"
 #include "matrix.h"
+#include "timer.h"
 #include "leds.h"
 
 uint8_t matrix[5][14] = {
@@ -53,10 +54,14 @@ int main(void)
 
 	HID_commit_state();
 
+	TIMER_init();
 	LED_init();
 
+	bool was_sleeping = false;
 	while (true) {
 		if (USB_is_sleeping()) {
+			if (!was_sleeping)
+				LED_set_indicators(0x00);
 			/* in sleep mode scan from time to time
 			 * FIXME: do it properly when timer API is done */
 			static int cnt = 0;
@@ -65,6 +70,11 @@ int main(void)
 				should_scan = true;
 			}
 			++cnt;
+			was_sleeping = true;
+		} else {
+			if (was_sleeping)
+				LED_set_indicators(HID_get_leds());
+			was_sleeping = false;
 		}
 		if (should_scan) {
 			should_scan = false;
@@ -79,6 +89,14 @@ int main(void)
 
 	while (1)
 		;
+}
+
+void MAIN_sleep_timer_handler()
+{
+	if (!USB_is_sleeping())
+		return;
+	/* make sure to scan the matrix from time to time while asleep */
+	should_scan = true;
 }
 
 void MAIN_handle_sof()

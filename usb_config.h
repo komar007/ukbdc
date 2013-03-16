@@ -70,7 +70,7 @@ struct endpoint_interrupt_handler {
 
 #define NUM_INTERFACE_REQUEST_HANDLERS		2
 #define NUM_ENDPOINT_INTERRUPT_HANDLERS		1
-#define NUM_SOF_HANDLERS			3
+#define NUM_SOF_HANDLERS			2
 
 extern const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];
 extern const struct interface_request_handler iface_req_handlers[];
