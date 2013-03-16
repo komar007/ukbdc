@@ -3,6 +3,7 @@
 #include "leds.h"
 #include "io.h"
 #include "platforms.h"
+#include "aux.h"
 
 void LED_init()
 {
@@ -38,7 +39,8 @@ void LED_set_indicators(uint8_t hid_leds)
 		LED_set(1, false);
 }
 
-static const int brightness[] = {0, 1, 2, 3, 4, 6, 8, 12, 16, 25, 33, 50, 66, 100, 127};
+static const int brightness[] = {0, 1, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64,
+	96, 128, 192};
 
 void LED_timer_slow_handler()
 {
@@ -53,8 +55,8 @@ void LED_timer_slow_handler()
 			}
 			break;
 		case ACTION_UP:
-			if (++leds[i].level > 14) {
-				leds[i].level = 14;
+			if (++leds[i].level > (int)ARR_SZ(brightness) - 1) {
+				leds[i].level = ARR_SZ(brightness) - 1;
 				leds[i].action = ACTION_NORMAL;
 			}
 			break;
@@ -67,7 +69,7 @@ void LED_timer_slow_handler()
 void LED_timer_pwm_handler()
 {
 	static int phase = 0;
-	if (phase > 127) {
+	if (phase > 192) {
 		phase = 0;
 		/* all leds off */
 		for (int i = 0; i < NUM_LEDS; ++i) {
@@ -79,7 +81,7 @@ void LED_timer_pwm_handler()
 	for (int i = 0; i < NUM_LEDS; ++i) {
 		if (leds[i].pin == -1)
 			continue;
-		if (128 - brightness[leds[i].level] == phase)
+		if (193 - brightness[leds[i].level] == phase)
 			IO_set(leds[i].pin, false);
 	}
 	++phase;

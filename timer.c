@@ -18,7 +18,7 @@ static struct timer_fast_handler tmr_fhandlers[] = {
 	{.callback = LED_timer_pwm_handler}
 };
 static struct timer_handler tmr_handlers[] = {
-	{.callback = LED_timer_slow_handler, .cnt_max = 1000},
+	{.callback = LED_timer_slow_handler, .cnt_max = 700},
 	{.callback = MAIN_sleep_timer_handler, .cnt_max = 10000}
 };
 
