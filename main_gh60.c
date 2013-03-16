@@ -62,14 +62,6 @@ int main(void)
 		if (USB_is_sleeping()) {
 			if (!was_sleeping)
 				LED_set_indicators(0x00);
-			/* in sleep mode scan from time to time
-			 * FIXME: do it properly when timer API is done */
-			static int cnt = 0;
-			if (cnt == 10000) {
-				cnt = 0;
-				should_scan = true;
-			}
-			++cnt;
 			was_sleeping = true;
 		} else {
 			if (was_sleeping)
