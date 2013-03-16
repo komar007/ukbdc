@@ -4,6 +4,7 @@
 
 #include <util/delay.h>
 #include <stdlib.h>
+#include <string.h> /* memset */
 
 static const uint8_t *matrix;
 static uint8_t *states;
@@ -40,6 +41,7 @@ void MATRIX_init(uint8_t rows, const uint8_t row_nums_[],
 	row_nums = row_nums_;
 	col_nums = col_nums_;
 	states = malloc(divceil(rows*cols, 8));
+	memset(states, 0, divceil(rows*cols, 8));
 	callback = callback_;
 }
 
