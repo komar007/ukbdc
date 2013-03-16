@@ -14,6 +14,7 @@
 #include "rawhid_protocol.h"
 #include "layout.h"
 #include "matrix.h"
+#include "leds.h"
 
 uint8_t matrix[5][14] = {
 	{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
@@ -25,8 +26,6 @@ uint8_t matrix[5][14] = {
 
 uint8_t rows[] = {0, 1, 2, 3, 4};
 uint8_t cols[] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
-
-#define LED 19
 
 volatile bool should_scan = false;
 
@@ -40,10 +39,7 @@ void on_key_press(uint8_t key, bool event)
 
 int main(void)
 {
-	clock_prescale_set(clock_div_4);
-
-	IO_config(LED, OUTPUT);
-	IO_set(LED, true);
+	clock_prescale_set(clock_div_1);
 
 	USB_init();
 
@@ -57,19 +53,26 @@ int main(void)
 
 	HID_commit_state();
 
-	TCCR0A = 0x00;
-	TCCR0B = 0x02; /* clk_io / 8 */
-	TIMSK0 = _BV(TOIE0);
-	while(1) {
+	LED_init();
+
+	while (true) {
+		if (USB_is_sleeping()) {
+			/* in sleep mode scan from time to time
+			 * FIXME: do it properly when timer API is done */
+			static int cnt = 0;
+			if (cnt == 10000) {
+				cnt = 0;
+				should_scan = true;
+			}
+			++cnt;
+		}
 		if (should_scan) {
 			should_scan = false;
 			bool changed = MATRIX_scan();
 			if (changed)
 				HID_commit_state();
-			if (HID_get_leds() & 0x02)
-				IO_set(LED, false);
-			else
-				IO_set(LED, true);
+			if (HID_leds_changed())
+				LED_set_indicators(HID_get_leds());
 		}
 		RAWHID_PROTOCOL_task();
 	}
@@ -80,12 +83,8 @@ int main(void)
 
 void MAIN_handle_sof()
 {
-}
-
-ISR(TIMER0_OVF_vect)
-{
-	static uint8_t num = 0;
-	if (num > 16) {
+	static uint16_t num = 0;
+	if (num > 20) {
 		num = 0;
 		should_scan = true;
 	} else {

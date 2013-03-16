@@ -32,6 +32,7 @@ const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS] = {
 #include "rawhid.h"
 #include "rawhid_protocol.h"
 #include "main.h"
+#include "leds.h"
 const struct interface_request_handler PROGMEM
 iface_req_handlers[NUM_INTERFACE_REQUEST_HANDLERS] = {
 	{.iface_num = KEYBOARD_INTERFACE,
@@ -48,4 +49,5 @@ struct sof_handler
 sof_handlers[NUM_SOF_HANDLERS] = {
 	{.f = &HID_handle_sof},
 	{.f = &MAIN_handle_sof},
+	{.f = &LED_handle_sof}
 };

@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <avr/io.h>
+#include "leds.h"
 
 #ifdef PLATFORM_alpha
 	#define DATAFLASH_PAGE_SIZE	528
@@ -27,12 +28,16 @@
 
 #ifdef PLATFORM_alpha
 	#define NUM_IO			19
+	#define NUM_LEDS		0
 #elif defined(PLATFORM_gh60)
 	#define NUM_IO			20
+	#define NUM_LEDS		2
 #elif defined(PLATFORM_ghpad)
 	#define NUM_IO			10
+	#define NUM_LEDS		2
 #else
-	#define NUM_IO			0
+	#define NUM_IO			1
+	#define NUM_LEDS		0
 #endif
 
 struct pin_config {
@@ -43,3 +48,4 @@ struct pin_config {
 };
 
 struct pin_config PINS[NUM_IO];
+volatile struct led leds[NUM_LEDS];

@@ -1,7 +1,7 @@
 #include "platforms.h"
 
-struct pin_config PINS[NUM_IO] = {
 #ifdef PLATFORM_alpha
+struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD7)},
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD6)},
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD5)},
@@ -24,9 +24,14 @@ struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB6)},
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB5)},
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB4)},
+};
+volatile struct led leds[NUM_LEDS] = {
+	/* no leds here */
+};
 #endif
 
 #ifdef PLATFORM_gh60
+struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD0)}, // r1
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD1)}, // r2
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD2)}, // r3
@@ -49,9 +54,15 @@ struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB3)}, // c14
 
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB2)}  // caps
+};
+volatile struct led leds[NUM_LEDS] = {
+	{.pin = -1}, /* no num lock */
+	{.pin = 19} /* caps lock */
+};
 #endif
 
 #ifdef PLATFORM_ghpad
+struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB4)}, // r1
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB6)}, // r2
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB3)}, // r3
@@ -64,5 +75,9 @@ struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD3)}, // c4
 
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB2)}  // caps
-#endif
 };
+volatile struct led leds[NUM_LEDS] = {
+	{.pin = -1}, /* no num lock */
+	{.pin = 9} /* caps lock */
+};
+#endif

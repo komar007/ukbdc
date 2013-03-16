@@ -13,7 +13,8 @@ static volatile uint16_t keyboard_idle_countdown=500;
 static volatile bool keyboard_send_now = false;
 
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
-static volatile uint8_t keyboard_leds=0;
+static volatile uint8_t keyboard_leds = 0;
+static volatile bool leds_changed = false;
 
 /* 256-bit HID report to send to the host */
 static volatile uint8_t key_map[32] = {0};
@@ -67,6 +68,7 @@ bool HID_handle_control_request(struct setup_packet *s)
 		case HID_SET_REPORT:
 			USB_wait_OUT();
 			keyboard_leds = USB_OUT_read_byte();
+			leds_changed = true;
 			USB_flush_OUT();
 			break;
 		case HID_SET_IDLE:
@@ -151,6 +153,16 @@ void HID_commit_state()
 uint8_t HID_get_leds()
 {
 	return keyboard_leds;
+}
+
+uint8_t HID_leds_changed()
+{
+	if (leds_changed) {
+		leds_changed = false;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 /* [/API section] ---------------------------------------------------------- */
