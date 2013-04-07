@@ -124,8 +124,6 @@ void HID_set_scancode_state(uint8_t code, bool state)
 		key_map[byte_no] &= ~_BV(bit_no);
 	else
 		key_map[byte_no] |= _BV(bit_no);
-	if (code == 49)
-		HID_set_scancode_state(50, state);
 	/* The part below is not tested! */
 	if (keyboard_protocol == BOOT_PROTOCOL) {
 		if (state == true) {
