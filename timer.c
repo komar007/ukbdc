@@ -19,7 +19,9 @@ static struct timer_fast_handler tmr_fhandlers[] = {
 };
 static struct timer_handler tmr_handlers[] = {
 	{.callback = LED_timer_slow_handler, .cnt_max = 700},
-	{.callback = MAIN_sleep_timer_handler, .cnt_max = 10000}
+	/* when in sleep mode, the main clock is divided by 8, so this is
+	 * equivalent to 8000 */
+	{.callback = MAIN_sleep_timer_handler, .cnt_max = 1000}
 };
 
 ISR(TIMER0_OVF_vect)

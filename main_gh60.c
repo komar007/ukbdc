@@ -60,12 +60,18 @@ int main(void)
 	bool was_sleeping = false;
 	while (true) {
 		if (USB_is_sleeping()) {
-			if (!was_sleeping)
+			if (!was_sleeping) {
 				LED_set_indicators(0x00);
+				while (!LED_all_stable())
+					;
+				clock_prescale_set(clock_div_4);
+			}
 			was_sleeping = true;
 		} else {
-			if (was_sleeping)
+			if (was_sleeping) {
+				clock_prescale_set(clock_div_1);
 				LED_set_indicators(HID_get_leds());
+			}
 			was_sleeping = false;
 		}
 		if (should_scan) {

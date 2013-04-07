@@ -30,6 +30,21 @@ void LED_set(uint8_t led, bool state)
 	}
 }
 
+bool LED_stable(uint8_t led)
+{
+	return leds[led].action == ACTION_NORMAL;
+}
+bool LED_all_stable()
+{
+	for (int i = 0; i < NUM_LEDS; ++i) {
+		if (leds[i].pin == -1)
+			continue;
+		if (!LED_stable(i))
+			return false;
+	}
+	return true;
+}
+
 void LED_set_indicators(uint8_t hid_leds)
 {
 	/* FIXME: take led numbers from config, when config API is implemented */
