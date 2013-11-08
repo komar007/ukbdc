@@ -30,7 +30,7 @@ volatile struct led leds[NUM_LEDS] = {
 };
 #endif
 
-#ifdef PLATFORM_gh60
+#if defined(PLATFORM_gh60) | defined(PLATFORM_gh60b)
 struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD0)}, // r1
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD1)}, // r2
@@ -46,7 +46,11 @@ struct pin_config PINS[NUM_IO] = {
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB6)}, // c6
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD4)}, // c7
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB1)}, // c8
+#ifdef PLATFORM_gh60
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB0)}, // c9
+#else
+	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB7)}, // c9
+#endif
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB5)}, // c10
 	{.portx = &PORTB, .pinx = &PINB, .ddrx = &DDRB, .mask = _BV(PB4)}, // c11
 	{.portx = &PORTD, .pinx = &PIND, .ddrx = &DDRD, .mask = _BV(PD7)}, // c12

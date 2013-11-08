@@ -29,7 +29,7 @@
 #ifdef PLATFORM_alpha
 	#define NUM_IO			19
 	#define NUM_LEDS		0
-#elif defined(PLATFORM_gh60)
+#elif defined(PLATFORM_gh60) | defined(PLATFORM_gh60b)
 	#define NUM_IO			20
 	#define NUM_LEDS		2
 #elif defined(PLATFORM_ghpad)
