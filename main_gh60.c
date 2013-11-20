@@ -16,6 +16,7 @@
 #include "matrix.h"
 #include "timer.h"
 #include "leds.h"
+#include "system.h"
 
 uint8_t matrix[5][14] = {
 	{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
@@ -38,6 +39,35 @@ void on_key_press(uint8_t key, bool event)
 		LAYOUT_set_key_state(key, event);
 }
 
+bool was_sleeping = false;
+
+void main_task()
+{
+	if (USB_is_sleeping()) {
+		if (!was_sleeping) {
+			LED_set_indicators(0x00);
+			while (!LED_all_stable())
+				;
+			clock_prescale_set(clock_div_4);
+		}
+		was_sleeping = true;
+	} else {
+		if (was_sleeping) {
+			clock_prescale_set(clock_div_1);
+			LED_set_indicators(HID_get_leds());
+		}
+		was_sleeping = false;
+	}
+	if (should_scan) {
+		should_scan = false;
+		bool changed = MATRIX_scan();
+		if (changed)
+			HID_commit_state();
+		if (HID_leds_changed())
+			LED_set_indicators(HID_get_leds());
+	}
+}
+
 int main(void)
 {
 	clock_prescale_set(clock_div_1);
@@ -57,36 +87,11 @@ int main(void)
 	TIMER_init();
 	LED_init();
 
-	bool was_sleeping = false;
-	while (true) {
-		if (USB_is_sleeping()) {
-			if (!was_sleeping) {
-				LED_set_indicators(0x00);
-				while (!LED_all_stable())
-					;
-				clock_prescale_set(clock_div_4);
-			}
-			was_sleeping = true;
-		} else {
-			if (was_sleeping) {
-				clock_prescale_set(clock_div_1);
-				LED_set_indicators(HID_get_leds());
-			}
-			was_sleeping = false;
-		}
-		if (should_scan) {
-			should_scan = false;
-			bool changed = MATRIX_scan();
-			if (changed)
-				HID_commit_state();
-			if (HID_leds_changed())
-				LED_set_indicators(HID_get_leds());
-		}
-		RAWHID_PROTOCOL_task();
-	}
+	SYSTEM_init();
+	SYSTEM_add_task(main_task, 0);
+	SYSTEM_add_task(RAWHID_PROTOCOL_task, 0);
 
-	while (1)
-		;
+	SYSTEM_main_loop();
 }
 
 void MAIN_sleep_timer_handler()

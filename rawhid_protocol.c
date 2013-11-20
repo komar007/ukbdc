@@ -148,7 +148,6 @@ check_crc:
 	} case PING: {
 		buf.header = PONG;
 		buf.payload[0] = state.status;
-		*(uint32_t*)(buf.payload + 1) = pgm_read_dword(LAYOUT_BEGIN);
 		RAWHID_send(&buf);
 		break;
 	} case RESET_PROTO:
