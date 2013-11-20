@@ -52,11 +52,6 @@ struct interface_request_handler {
 	interface_request_handler_fun f;
 };
 
-/* A SOF handler is called each time a SOF comes */
-struct sof_handler {
-	void (*f)();
-};
-
 typedef void (*endpoint_interrupt_handler_fun)(uint8_t flags);
 /* An endpoint interrupt handler is called each time there is an interrupt on
  * the endpoint. The interrupt masks per endpoint are configured in struct
@@ -70,11 +65,9 @@ struct endpoint_interrupt_handler {
 
 #define NUM_INTERFACE_REQUEST_HANDLERS		2
 #define NUM_ENDPOINT_INTERRUPT_HANDLERS		1
-#define NUM_SOF_HANDLERS			2
 
 extern const struct endpoint_config PROGMEM endpoint_configs[NUM_ENDPOINTS];
 extern const struct interface_request_handler iface_req_handlers[];
 extern const struct endpoint_interrupt_handler PROGMEM endpoint_int_handlers[];
-extern struct sof_handler sof_handlers[];
 
 /* [/API section] ---------------------------------------------------------- */

@@ -3,6 +3,7 @@
 #include "usb_config.h"
 #include "descriptors.h"
 #include "platforms.h"
+#include "system.h"
 
 #include <stdint.h>
 #include <avr/interrupt.h>
@@ -92,9 +93,7 @@ ISR(USB_GEN_vect)
 		goto end;
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
-		/* call all SOF handlers */
-		for (uint8_t i = 0; i < NUM_SOF_HANDLERS; ++i)
-			(*sof_handlers[i].f)();
+		SYSTEM_publish_message(USB_SOF, NULL);
 	}
 	if (device_int_flags & _BV(SUSPI)) {
 		usb_sleeping = true;

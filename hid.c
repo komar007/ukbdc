@@ -1,4 +1,5 @@
 #include "hid.h"
+#include "system.h"
 
 /* The protocol the keyboard is using at the moment */
 static volatile uint8_t keyboard_protocol = REPORT_PROTOCOL;
@@ -85,7 +86,7 @@ bool HID_handle_control_request(struct setup_packet *s)
 	return true;
 }
 
-void HID_handle_sof()
+void HID_handle_sof(message_type_t __attribute__((unused)) type, void __attribute__((unused)) *data)
 {
 	if (!USB_get_configuration())
 		return;
@@ -107,6 +108,11 @@ void HID_handle_sof()
 /* [/Callbacks section] ---------------------------------------------------- */
 
 /* [API section] ----------------------------------------------------------- */
+
+void HID_init()
+{
+	SYSTEM_subscribe(USB_SOF, HID_handle_sof);
+}
 
 /* Checks if a key is pressed */
 bool HID_scancode_is_pressed(uint8_t code)

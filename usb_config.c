@@ -44,8 +44,3 @@ endpoint_int_handlers[NUM_ENDPOINT_INTERRUPT_HANDLERS] = {
 	{.endpoint_num = RAWHID_RX_ENDPOINT,
 		.f = &RAWHID_PROTOCOL_handle_packet}
 };
-struct sof_handler
-sof_handlers[NUM_SOF_HANDLERS] = {
-	{.f = &HID_handle_sof},
-	{.f = &MAIN_handle_sof}
-};

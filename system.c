@@ -6,10 +6,13 @@
 #include <limits.h>
 
 list_t task_list;
+static list_t handlers_for_type[NUM_SYSTEM_MESSAGE_TYPES];
 
 void SYSTEM_init()
 {
 	list_init(&task_list);
+	for (int i = 0; i < NUM_SYSTEM_MESSAGE_TYPES; ++i)
+		list_init(&handlers_for_type[i]);
 }
 
 void SYSTEM_add_task(task_callback_t callback, int priority)
@@ -39,4 +42,25 @@ void SYSTEM_main_loop()
 			}
 		}
 	}
+}
+
+int SYSTEM_publish_message(message_type_t type, void *data)
+{
+	if (type >= NUM_SYSTEM_MESSAGE_TYPES)
+		return ERR_WRONG_TYPE;
+	node_t *i = handlers_for_type[type].head;
+	for (; i; i = i->next) {
+		message_handler_t handler = i->data;
+		handler(type, data);
+	}
+	return 0;
+}
+
+int SYSTEM_subscribe(message_type_t type, message_handler_t handler)
+{
+	if (type >= NUM_SYSTEM_MESSAGE_TYPES)
+		return ERR_WRONG_TYPE;
+	list_t *handlers = &handlers_for_type[type];
+	list_add(handlers, handler);
+	return 0;
 }

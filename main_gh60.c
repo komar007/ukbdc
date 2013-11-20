@@ -71,23 +71,24 @@ void main_task()
 int main(void)
 {
 	clock_prescale_set(clock_div_1);
+	SYSTEM_init();
 
 	USB_init();
 
 	/* initialize with 65 keys */
 	LAYOUT_init(65);
-
 	LAYOUT_set((struct layout*)LAYOUT_BEGIN);
 	LAYOUT_set_callback(&HID_set_scancode_state);
 
 	MATRIX_init(5, rows, 14, cols, (const uint8_t*)matrix, &on_key_press);
 
+	HID_init();
 	HID_commit_state();
 
 	TIMER_init();
 	LED_init();
 
-	SYSTEM_init();
+	SYSTEM_subscribe(USB_SOF, MAIN_handle_sof);
 	SYSTEM_add_task(main_task, 0);
 	SYSTEM_add_task(RAWHID_PROTOCOL_task, 0);
 
@@ -102,7 +103,8 @@ void MAIN_sleep_timer_handler()
 	should_scan = true;
 }
 
-void MAIN_handle_sof()
+void MAIN_handle_sof(message_type_t __attribute__((unused)) type,
+		void __attribute__((unused)) *data)
 {
 	static uint16_t num = 0;
 	if (num > 20) {
