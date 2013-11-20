@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "aux.h"
+#include "system.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -13,23 +14,13 @@ void TIMER_init()
 	TIMSK1 = _BV(OCIE1A);
 }
 
-#include "leds.h"
-#include "main.h"
-static struct timer_handler tmr_handlers[] = {
-	{.callback = LED_timer_slow_handler, .cnt_max = 100},
-	/* when in sleep mode, the main clock is divided by 8, so this is
-	 * equivalent to 8000 */
-	{.callback = MAIN_sleep_timer_handler, .cnt_max = 125}
-};
-
 ISR(TIMER1_COMPA_vect)
 {
 	TCNT1 = 0;
-	for (unsigned i = 0; i < ARR_SZ(tmr_handlers); ++i) {
-		++tmr_handlers[i].cnt;
-		if (tmr_handlers[i].cnt > tmr_handlers[i].cnt_max) {
-			tmr_handlers[i].cnt = 0;
-			(*tmr_handlers[i].callback)();
-		}
-	}
+	static uint8_t cnt = 0;
+	SYSTEM_publish_message(TIMER, INTERVAL_125US, NULL);
+	for (int i = 1; i < 9; ++i)
+		if ((cnt & ((1 << i) - 1)) == 0)
+			SYSTEM_publish_message(TIMER, i, NULL);
+	++cnt;
 }

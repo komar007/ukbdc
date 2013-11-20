@@ -5,6 +5,7 @@
 #include "platforms.h"
 #include "aux.h"
 #include "system.h"
+#include "timer.h"
 
 void LED_init()
 {
@@ -18,6 +19,8 @@ void LED_init()
 	TCCR0A = 0x00;
 	TCCR0B = 0x01;
 	TIMSK0 = _BV(TOIE0);
+	extern void LED_timer_slow_handler();
+	SYSTEM_subscribe_subtyped(TIMER, INTERVAL_16MS, LED_timer_slow_handler);
 }
 
 void LED_set(uint8_t led, bool state)

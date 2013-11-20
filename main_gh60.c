@@ -72,6 +72,7 @@ int main(void)
 {
 	clock_prescale_set(clock_div_1);
 	SYSTEM_init();
+	TIMER_init();
 
 	USB_init();
 
@@ -85,10 +86,10 @@ int main(void)
 	HID_init();
 	HID_commit_state();
 
-	TIMER_init();
 	LED_init();
 
 	SYSTEM_subscribe(USB_SOF, MAIN_handle_sof);
+	SYSTEM_subscribe_subtyped(TIMER, INTERVAL_2MS, MAIN_sleep_timer_handler);
 	SYSTEM_add_task(main_task, 0);
 	SYSTEM_add_task(RAWHID_PROTOCOL_task, 0);
 
