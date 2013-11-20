@@ -4,6 +4,7 @@
 #include "io.h"
 #include "platforms.h"
 #include "aux.h"
+#include "system.h"
 
 void LED_init()
 {
@@ -13,6 +14,7 @@ void LED_init()
 		IO_config(leds[i].pin, OUTPUT);
 		IO_set(leds[i].pin, true);
 	}
+
 	TCCR0A = 0x00;
 	TCCR0B = 0x01;
 	TIMSK0 = _BV(TOIE0);
@@ -100,4 +102,9 @@ void LED_timer_pwm_handler()
 			IO_set(leds[i].pin, false);
 	}
 	++phase;
+}
+
+ISR(TIMER0_OVF_vect)
+{
+	LED_timer_pwm_handler();
 }

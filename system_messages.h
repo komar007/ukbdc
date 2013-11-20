@@ -1,6 +1,5 @@
 typedef enum {
-	FAST_TIMER = 0,
-	USB_SOF,
+	USB_SOF = 0,
 
 	NUM_SYSTEM_MESSAGE_TYPES
 } message_type_t;
