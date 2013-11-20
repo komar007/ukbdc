@@ -103,8 +103,7 @@ void MAIN_sleep_timer_handler()
 	should_scan = true;
 }
 
-void MAIN_handle_sof(message_type_t __attribute__((unused)) type,
-		void __attribute__((unused)) *data)
+void MAIN_handle_sof(void *data)
 {
 	static uint16_t num = 0;
 	if (num > 20) {

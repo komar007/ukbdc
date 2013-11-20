@@ -86,7 +86,7 @@ bool HID_handle_control_request(struct setup_packet *s)
 	return true;
 }
 
-void HID_handle_sof(message_type_t __attribute__((unused)) type, void __attribute__((unused)) *data)
+void HID_handle_sof(void *data)
 {
 	if (!USB_get_configuration())
 		return;

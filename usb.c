@@ -93,7 +93,7 @@ ISR(USB_GEN_vect)
 		goto end;
         }
 	if (device_int_flags & _BV(SOFI) && usb_current_conf) {
-		SYSTEM_publish_message(USB_SOF, NULL);
+		SYSTEM_publish_message(USB_SOF, 0, NULL);
 	}
 	if (device_int_flags & _BV(SUSPI)) {
 		usb_sleeping = true;

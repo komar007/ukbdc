@@ -44,22 +44,28 @@ void SYSTEM_main_loop()
 	}
 }
 
-int SYSTEM_publish_message(message_type_t type, void *data)
+int SYSTEM_publish_message(message_type_t type, uint8_t subtype, void *data)
 {
 	if (type >= NUM_SYSTEM_MESSAGE_TYPES)
 		return ERR_WRONG_TYPE;
 	node_t *i = handlers_for_type[type].head;
 	for (; i; i = i->next) {
-		message_handler_t handler = i->data;
-		handler(type, data);
+		message_handler_t *handler = i->data;
+		if (handler->subtype == ANY_SUBTYPE || handler->subtype == subtype)
+			handler->callback(data);
 	}
 	return 0;
 }
 
-int SYSTEM_subscribe(message_type_t type, message_handler_t handler)
+int SYSTEM_subscribe_subtyped(message_type_t type, uint8_t subtype, message_callback_t callback)
 {
 	if (type >= NUM_SYSTEM_MESSAGE_TYPES)
 		return ERR_WRONG_TYPE;
+	message_handler_t *handler = calloc(1, sizeof(*handler));
+	*handler = (message_handler_t){
+		.subtype = subtype,
+		.callback = callback
+	};
 	list_t *handlers = &handlers_for_type[type];
 	list_add(handlers, handler);
 	return 0;
