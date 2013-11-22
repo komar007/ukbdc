@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include <avr/interrupt.h>
+
 list_t task_list;
 static list_t handlers_for_type[NUM_SYSTEM_MESSAGE_TYPES];
 
@@ -13,6 +15,7 @@ void SYSTEM_init()
 	list_init(&task_list);
 	for (int i = 0; i < NUM_SYSTEM_MESSAGE_TYPES; ++i)
 		list_init(&handlers_for_type[i]);
+	sei();
 }
 
 void SYSTEM_add_task(task_callback_t callback, int priority)
@@ -51,13 +54,13 @@ int SYSTEM_publish_message(message_type_t type, uint8_t subtype, void *data)
 	node_t *i = handlers_for_type[type].head;
 	for (; i; i = i->next) {
 		message_handler_t *handler = i->data;
-		if (handler->subtype == ANY_SUBTYPE || handler->subtype == subtype)
+		if (handler->subtype == ANY || handler->subtype == subtype)
 			handler->callback(data);
 	}
 	return 0;
 }
 
-int SYSTEM_subscribe_subtyped(message_type_t type, uint8_t subtype, message_callback_t callback)
+int SYSTEM_subscribe(message_type_t type, uint8_t subtype, message_callback_t callback)
 {
 	if (type >= NUM_SYSTEM_MESSAGE_TYPES)
 		return ERR_WRONG_TYPE;

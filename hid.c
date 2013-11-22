@@ -111,7 +111,7 @@ void HID_handle_sof(void *data)
 
 void HID_init()
 {
-	SYSTEM_subscribe(USB_SOF, HID_handle_sof);
+	SYSTEM_subscribe(USB_SOF, ANY, HID_handle_sof);
 }
 
 /* Checks if a key is pressed */

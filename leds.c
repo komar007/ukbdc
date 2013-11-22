@@ -20,7 +20,8 @@ void LED_init()
 	TCCR0B = 0x01;
 	TIMSK0 = _BV(TOIE0);
 	extern void LED_timer_slow_handler();
-	SYSTEM_subscribe_subtyped(TIMER, INTERVAL_16MS, LED_timer_slow_handler);
+	int led_tmr = TIMER_add(256, true);
+	SYSTEM_subscribe(TIMER, led_tmr, LED_timer_slow_handler);
 }
 
 void LED_set(uint8_t led, bool state)

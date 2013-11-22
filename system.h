@@ -4,7 +4,7 @@
 #include "list.h"
 
 #define ERR_WRONG_TYPE -1
-#define ANY_SUBTYPE 0xff
+#define ANY 0xff
 
 typedef void (*task_callback_t)();
 
@@ -31,11 +31,4 @@ void SYSTEM_main_loop();
 int SYSTEM_publish_message(message_type_t type, uint8_t subtype, void *data);
 /* Subscribe to a particular message type. The subscriber will be called only
  * on a message with specified subtype */
-int SYSTEM_subscribe_subtyped(message_type_t type, uint8_t subtype, message_callback_t handler);
-/* Subscribe to a particular message type. The subscriber will be called on
- * a message with any subtype. Subtype must be between 0x00 and 0xfe, 0xff
- * means any subtype */
-static inline int SYSTEM_subscribe(message_type_t type, message_callback_t callback)
-{
-	return SYSTEM_subscribe_subtyped(type, ANY_SUBTYPE, callback);
-}
+int SYSTEM_subscribe(message_type_t type, uint8_t subtype, message_callback_t handler);

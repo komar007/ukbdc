@@ -88,8 +88,10 @@ int main(void)
 
 	LED_init();
 
-	SYSTEM_subscribe(USB_SOF, MAIN_handle_sof);
-	SYSTEM_subscribe_subtyped(TIMER, INTERVAL_2MS, MAIN_sleep_timer_handler);
+	SYSTEM_subscribe(USB_SOF, ANY, MAIN_handle_sof);
+	int sleep_tmr = TIMER_add(32, true);
+	SYSTEM_subscribe(TIMER, sleep_tmr, MAIN_sleep_timer_handler);
+
 	SYSTEM_add_task(main_task, 0);
 	SYSTEM_add_task(RAWHID_PROTOCOL_task, 0);
 
