@@ -7,7 +7,6 @@
 #include <stdbool.h>
 
 #include "main.h"
-#include "usb_keyboard.h"
 #include "io.h"
 #include "hid.h"
 #include "rawhid.h"
