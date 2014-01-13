@@ -15,6 +15,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/*! \file atmel_bootloader.h
+ * Atmel's stock DFU bootloader ABI wrapper allowing to call the bootloader
+ * flash writing routines and more
+ */
+
 #pragma once
 
 #include <avr/io.h>
@@ -43,8 +48,11 @@
 	"pop r1"      "\n\t" \
 	"pop r0"      "\n\t" \
 
-/* wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
- * bootloader function */
+/*! A wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
+ * bootloader routine
+ * \param addr address of the routine
+ * \param arg the argument to pass
+ */
 #define ATMEL_DFU_CALL_1ARG(addr, arg) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
@@ -63,8 +71,12 @@
 		  "r20", "r30", "r31");                       \
 }))                                                           \
 
-/* wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
- * bootloader function and returns value returned in r16 */
+/*! A wrapper which passes one 24-bit argument in r18:r17:r16 to Atmel DFU
+ * bootloader routine and returns the value returned in r16
+ * \param addr address of the routine
+ * \param arg the argument to pass
+ * \return the value returned by the routine in `r16`
+ */
 #define ATMEL_DFU_CALL_1ARG_RET(addr, arg) \
 (__extension__({                                              \
 	uint8_t ret;                                          \
@@ -86,8 +98,12 @@
 	ret;                                                  \
 }))
 
-/* wrapper which passes two 16-bit arguments in r17:r16 and r18:r19,
- * respectively */
+/*! A wrapper which passes two 16-bit arguments in r17:r16 and r18:r19,
+ * respectively
+ * \param addr address of the routine
+ * \param arg1 the argument passed through `r17:r16`
+ * \param arg2 the argument passes through `r18:r19`
+ */
 #define ATMEL_DFU_CALL_2ARG(addr, arg1, arg2) \
 (__extension__({                                              \
 	__asm__ __volatile__(                                 \
@@ -108,7 +124,9 @@
 		  "r20", "r30", "r31");                       \
 }))
 
-/* Atmel DFU bootloader ABI calls */
+/*! \defgroup low_level Low level routine wrappers
+ *  @{
+ */
 static inline void flash_page_erase_and_write(uint32_t addr)
 {
 	ATMEL_DFU_CALL_1ARG(PAGE_ERASE_AND_WRITE_ADDR, addr);
@@ -137,6 +155,7 @@ static inline void flash_lock_wr_bits(uint8_t bits)
 {
 	ATMEL_DFU_CALL_1ARG(LOCK_WR_BITS_ADDR, (uint32_t)bits);
 }
+/*! @} */
 
 /* fuse bits addresses */
 #define FUSE_LOW	0
@@ -146,8 +165,10 @@ static inline void flash_lock_wr_bits(uint8_t bits)
 #define BOOTSZ0 1
 #define BOOTSZ1 2
 
-/* Determines the size of bootloader section in run-time based on BOOTSZ[1..0]
- * fusebits */
+/*! Determines the size of bootloader section in run-time based on BOOTSZ[1..0]
+ * fusebits
+ * \returns the bootloader size TODO: in bytes or words???
+ */
 static inline uint32_t bootloader_size()
 {
 	uint8_t hfuse = flash_read_fuse(FUSE_HIGH);
@@ -155,7 +176,7 @@ static inline uint32_t bootloader_size()
 	return 512 << (3-bootsz);
 }
 
-/* Jumps to the beginning of bootloader. Address is computed in runtime */
+/*! Jumps to the beginning of bootloader. Address is computed in runtime */
 static inline void run_bootloader()
 {
 	TIMSK0 = 0;
@@ -172,4 +193,8 @@ static inline void run_bootloader()
 		: "r30", "r31");
 }
 
+/*! Writes a whole page of flash using Atmel's DFU bootloader's routines
+ * \param addr the address in flash
+ * \data the pointer to the beginning of the data to be written
+ */
 void flash_write_page(uint32_t addr, const uint8_t *data);

@@ -15,9 +15,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/*! \file crc.h
+ * Contains a function used to compute a CRC-16 fingerprint on an array
+ */
+
 #pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 
+/*! Computes CRC-16
+ * \param len the size of input data
+ * \param data a pointer to the beginning of data
+ * \return 2-byte CRC-16 value
+ */
 uint16_t crc16(size_t len, const uint8_t *data);
