@@ -15,6 +15,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/*! \file matrix.c
+ * implementation of module MATRIX
+ */
+
 #include "matrix.h"
 #include "aux.h"
 #include "io.h"
@@ -30,6 +34,11 @@ static const uint8_t *col_nums;
 static int nrows, ncols;
 static matrix_callback_t callback;
 
+/*! Retrieves saved state of a key
+ * \param row key row number
+ * \param col key column number
+ * \return `true` if the key is pressed, `false` otherwise
+ */
 bool is_pressed(uint8_t row, uint8_t col)
 {
 	const uint8_t pos = row*ncols + col;
@@ -37,6 +46,12 @@ bool is_pressed(uint8_t row, uint8_t col)
 	const uint8_t bit = pos & 0x07;
 	return (states[byte] >> bit) & 0x01;
 }
+
+/*! Sets real key state to memory
+ * \param row key row number
+ * \param col key column number
+ * \param state key state
+ */
 void set_state(uint8_t row, uint8_t col, bool state)
 {
 	const uint8_t pos = row*ncols + col;
