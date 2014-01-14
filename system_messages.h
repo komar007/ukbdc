@@ -15,11 +15,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/*! \file system_messages.h
+ * This file contains all types of messages used by the published-subscriber
+ * messaging system.
+ */
+
 #pragma once
 
+/*! Stores a message type */
 typedef enum {
+	/*! Used by the USB module, published on USB's start-of-frame */
 	USB_SOF = 0,
+	/*! Used by the TIMER module, published when a timer has finished
+	 * counting time */
 	TIMER,
 
+	/*! The number of all message types */
 	NUM_SYSTEM_MESSAGE_TYPES
 } message_type_t;
