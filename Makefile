@@ -4,9 +4,19 @@ SHELL=/bin/bash
 .SUFFIXES:
 include Makefile.config
 
+ifeq ($(OS), Windows_NT)
+	RM = rmdir /s /q
+	MKDIR = mkdir
+	fix_path = $(subst /,\,$1)
+else
+	RM = rm -fr
+	MKDIR = mkdir -p
+	fix_path = $1
+endif
+
 define RULES_TEMPLATE=
 obj/$1:
-	mkdir -p obj/$1
+	$(MKDIR) $(call fix_path, obj/$1)
 obj/$1/%.d: %.c | obj/$1
 	@$(CC) $(CFLAGS) $$(OPTS_$1) -DPLATFORM_$1 -MM -MT "$$(@:.d=.o) $$@" $$< > $$@
 obj/$1/%.o: %.c | obj/$1
@@ -26,7 +36,7 @@ endef
 $(foreach target,$(TARGETS),$(eval $(call RESULT_DEPS_TEMPLATE,$(target))))
 
 bin/:
-	mkdir -p bin/
+	$(MKDIR) bin
 
 bin/%.hex: bin/%.elf
 	avr-objcopy -O ihex $^ $@
@@ -41,4 +51,4 @@ $(foreach target,$(TARGETS),$(eval $(call TARGET_TEMPLATE,$(target))))
 all: $(TARGETS)
 
 clean:
-	rm -fr bin/ obj/
+	$(RM) bin obj
