@@ -15,7 +15,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*! \file system.h
+/*! \defgroup SYSTEM
+ * \brief nonpreemptive multitasking and publisher-subscriber messaging system
+ *
  * The module SYSTEM implements a simple nonpreemptive multitasking
  * capability. Every task is represented by a callback (\ref task_callback_t)
  * and priority. Tasks are run in cycles, and the `priority` parameter
@@ -88,6 +90,8 @@
  *  value of this pointer depends on the publisher and can be used to pass any
  *  extra data to the subscriber. In this example the publisher simply passes
  *  a null pointer.
+ *
+ *  @{
  */
 
 #pragma once
@@ -159,3 +163,5 @@ int SYSTEM_publish_message(message_type_t type, uint8_t subtype, void *data);
  * when the message is published
  */
 int SYSTEM_subscribe(message_type_t type, uint8_t subtype, message_callback_t handler);
+
+/*! @} */

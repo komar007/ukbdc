@@ -15,13 +15,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*! \file leds.h
+/*! \defgroup LEDS
+ * \brief Support for indicator LEDs with soft transitions
+ *
  * This module provides a simple interface to control LEDs with soft
  * transitions using software PWM.
  *
  * It also adds one layer of abstraction by assigning all LEDs numbers.
  *
  * This module uses TIMER0 exclusively!
+ *
+ * @{
  */
 
 #pragma once
@@ -69,3 +73,5 @@ bool LED_stable(uint8_t led);
  * \return `true` if all LEDs are stable, `false` otherwise
  */
 bool LED_all_stable();
+
+/*! @} */

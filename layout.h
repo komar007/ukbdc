@@ -15,7 +15,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*! \file layout.h
+/*! \defgroup LAYOUT
+ * \brief Support for multi-layered keyboard layouts
+ *
  * This module provides support for keyboard layouts with layers and layer
  * changing actions.
  *
@@ -31,6 +33,8 @@
  *
  * The information when scancodes should be changed is provided using one
  * simple callback.
+ *
+ * @{
  */
 
 #pragma once
@@ -39,25 +43,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-/*! \defgroup action_types Action Types
- *  @{
- */
 /*! no action assigned to this key */
 #define NONE	0x00
 /*! relative action */
 #define REL	0x01
 /*! absolute action */
 #define ABS	0x02
-/* @} */
 
-/*! \defgroup action_sources Action Sources
- *  @{
- */
 /*! when pressed down */
 #define DOWN	1
 /*! when released */
 #define UP	0
-/* @} */
 
 #define ACT(dir, type) ((type) << (4*(dir)))
 
@@ -130,3 +126,5 @@ void LAYOUT_set_callback(scancode_callback_t callback);
  */
 void LAYOUT_set_key_state(uint8_t key, bool event);
 void LAYOUT_deactivate();
+
+/*! @} */

@@ -16,7 +16,7 @@
  */
 
 /*! \file matrix.c
- * implementation of module MATRIX
+ * implementation of module \ref MATRIX
  */
 
 #include "matrix.h"

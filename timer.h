@@ -15,12 +15,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*! \file timer.h
+/*! \defgroup TIMER
+ * \brief Hardware-supported single-shot and continuous timers
+ *
  * This module allows the user to add and delete timers which will trigger
  * events after a particular time.
  * Each timer can be continuous, which means it will trigger continuously
  * every amount of time, or not continuous which means it will trigger only
  * once after a particular time period.
+ *  @{
  */
 
 #pragma once
@@ -69,3 +72,5 @@ int8_t TIMER_add(uint32_t time, bool continuous);
  * \retval ERR_NO_TIMER timer does not exist
  */
 int8_t TIMER_delete(int8_t id);
+
+/*! @} */

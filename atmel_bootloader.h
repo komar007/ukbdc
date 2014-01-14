@@ -15,9 +15,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*! \file atmel_bootloader.h
- * Atmel's stock DFU bootloader ABI wrapper allowing to call the bootloader
- * flash writing routines and more
+/*! \defgroup ATMEL_BOOTLOADER
+ * \brief Helper functions used to access the Atmel's DFU bootloader's ABI
+ *
+ * This module allows easy access to Atmel's stock DFU booloader by wrapping
+ * its routines with easy-to-use functions.
+ *
+ * It also contains some extra higher-level functions.
+ *
+ * @{
  */
 
 #pragma once
@@ -124,9 +130,6 @@
 		  "r20", "r30", "r31");                       \
 }))
 
-/*! \defgroup low_level Low level routine wrappers
- *  @{
- */
 static inline void flash_page_erase_and_write(uint32_t addr)
 {
 	ATMEL_DFU_CALL_1ARG(PAGE_ERASE_AND_WRITE_ADDR, addr);
@@ -155,7 +158,6 @@ static inline void flash_lock_wr_bits(uint8_t bits)
 {
 	ATMEL_DFU_CALL_1ARG(LOCK_WR_BITS_ADDR, (uint32_t)bits);
 }
-/*! @} */
 
 /* fuse bits addresses */
 #define FUSE_LOW	0
@@ -198,3 +200,5 @@ static inline void run_bootloader()
  * \data the pointer to the beginning of the data to be written
  */
 void flash_write_page(uint32_t addr, const uint8_t *data);
+
+/*! @} */

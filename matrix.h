@@ -16,7 +16,10 @@
  */
 
 
-/*! \file matrix.h
+/*! \defgroup MATRIX
+ *
+ * \brief Reading keyboard matrices
+ *
  * This module implements matrix keyboard support. It scans a matrix by
  * setting one of the row pins to 0 at a time and reading the column
  * pins. The pins are properly configured each time the matrix is scanned, but
@@ -32,6 +35,8 @@
  * mapping between matrix coordinates and key numbers has to be provided. This
  * way after a change in the matrix layout or even rearrangement of the keys
  * it is enough to change the mapping array.
+ *
+ * @{
  */
 
 #pragma once
@@ -68,3 +73,5 @@ void MATRIX_init(uint8_t rows, const uint8_t row_nums_[],
 /*! Performs a single matrix scan and launches callback for each key which
  * changed state since the last scan */
 bool MATRIX_scan();
+
+/*! @} */
