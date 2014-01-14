@@ -19,7 +19,7 @@
 #include "atmel_bootloader.h"
 #include "layout.h"
 #include "crc.h"
-#include "aux.h"
+#include "auxiliary.h"
 #include "main.h"
 
 #include <avr/interrupt.h>

@@ -20,7 +20,7 @@
 #include "leds.h"
 #include "io.h"
 #include "platforms.h"
-#include "aux.h"
+#include "auxiliary.h"
 #include "system.h"
 #include "timer.h"
 

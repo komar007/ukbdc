@@ -16,7 +16,7 @@
  */
 
 #include "layout.h"
-#include "aux.h"
+#include "auxiliary.h"
 
 #include <avr/pgmspace.h>
 

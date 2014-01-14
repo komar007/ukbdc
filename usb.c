@@ -15,7 +15,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "aux.h"
+#include "auxiliary.h"
 #include "usb.h"
 #include "usb_config.h"
 #include "descriptors.h"

@@ -20,7 +20,7 @@
  */
 
 #include "matrix.h"
-#include "aux.h"
+#include "auxiliary.h"
 #include "io.h"
 
 #include <util/delay.h>

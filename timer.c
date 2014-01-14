@@ -16,7 +16,7 @@
  */
 
 #include "timer.h"
-#include "aux.h"
+#include "auxiliary.h"
 #include "system.h"
 
 #include <stdbool.h>
