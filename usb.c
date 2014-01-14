@@ -122,44 +122,28 @@ end:
 	USB_set_endpoint(prev_endp);
 }
 
-/* FIXME: This code comes from the Teensy hid keyboard example and is
- * absolutely horrible and needs a complete rewrite */
 static void serve_get_descriptor(uint16_t wValue, uint16_t wIndex, uint16_t wLength)
 {
-	const uint8_t *list;
-	list = (const uint8_t *)descriptor_list;
-	uint8_t	desc_length;
-	const uint8_t *desc_addr;
-	for (uint8_t i=0; ; ++i) {
-		if (i >= NUM_DESC_LIST) {
-			USB_stall_endpoint();
+	for (uint8_t i = 0; i < NUM_DESC_LIST; ++i) {
+		uint16_t cur_wValue = get_pgm_struct_field(&desc_list[i], wValue);
+		uint16_t cur_wIndex = get_pgm_struct_field(&desc_list[i], wIndex);
+		if (cur_wValue == wValue && cur_wIndex == wIndex) {
+			/* enable interrupts to handle reset in the middle of sending a
+			 * descriptor during enumeration */
+			uint8_t sreg = SREG;
+			sei();
+			bool status = USB_write_blob(
+					get_pgm_struct_field(&desc_list[i], addr),
+					wLength,
+					ENDPOINT0_SIZE, true /* from progmem */
+			);
+			if (status)
+				USB_control_read_complete_status_stage();
+			SREG = sreg;
 			return;
 		}
-		uint16_t desc_val = pgm_read_word(list);
-		if (desc_val != wValue) {
-			list += sizeof(struct descriptor_list_struct);
-			continue;
-		}
-		list += 2;
-		desc_val = pgm_read_word(list);
-		if (desc_val != wIndex) {
-			list += sizeof(struct descriptor_list_struct)-2;
-			continue;
-		}
-		list += 2;
-		desc_addr = (const uint8_t *)pgm_read_word(list);
-		list += 2;
-		desc_length = pgm_read_byte(list);
-		break;
 	}
-	/* enable interrupts to handle reset in the middle of sending a
-	 * descriptor during enumeration */
-	uint8_t sreg = SREG;
-	sei();
-	bool status = USB_write_blob(desc_addr, wLength, ENDPOINT0_SIZE, true);
-	if (status)
-		USB_control_read_complete_status_stage();
-	SREG = sreg;
+	USB_stall_endpoint();
 }
 
 /* Processes Standard Device Requests. Returns true on no error, false if the

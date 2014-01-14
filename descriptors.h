@@ -38,90 +38,6 @@ static const uint8_t PROGMEM device_descriptor[] = {
 	0,					// iSerialNumber
 	1					// bNumConfigurations
 };
-/* The following HID descriptors' format is described in
- * Keyboard Protocol 1, HID 1.11 spec, Appendix B, page 59-60 */
-
-/* This descriptor makes sure no reserved keycodes are send to the host by
- * putting constant data in all reserved places. For some reason, however, it
- * doesn't work on Windows. Probably it is a problem with the descriptor, so
- * it needs reviewing. Below it, is a simpler 256-bit descriptor. */
-/*
-static uint8_t PROGMEM keyboard_hid_report_desc[] = {
-        0x05, 0x01,          // Usage Page (Generic Desktop),
-        0x09, 0x06,          // Usage (Keyboard),
-        0xA1, 0x01,          // Collection (Application),
-        0x75, 0x01,          //   Report Size (1),
-        0x95, 0x01,          //   Report Count (1),
-        0x81, 0x03,          //   Input (Constant),                 ; Reserved bit for usage id 00
-        0x05, 0x07,          //   Usage Page (Key Codes),
-        0x15, 0x00,          //   Logical Minimum (0),
-        0x25, 0x01,          //   Logical Maximum (1),
-        0x95, 0xA4,          //   Report Count (164),
-        0x19, 0x01,          //   Usage Minimum (1),
-        0x29, 0xA4,          //   Usage Maximum (164),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute)
-        0x95, 0x0B,          //   Report Count (11),
-        0x81, 0x03,          //   Input (Constant),                 ; Reserved 11 bits for usage id A5-CF
-        0x95, 0x2E,          //   Report Count (46),
-        0x19, 0xB0,          //   Usage Minimum (176),
-        0x29, 0xDD,          //   Usage Maximum (221),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute)
-        0x95, 0x02,          //   Report Count (2),
-        0x81, 0x03,          //   Input (Constant),                 ; Reserved 2 bits for usage id A5-CF
-        0x95, 0x08,          //   Report Count (8),
-        0x19, 0xE0,          //   Usage Minimum (224),
-        0x29, 0xE7,          //   Usage Maximum (231),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute)
-        0x95, 0x18,          //   Report Count (24),
-        0x81, 0x03,          //   Input (Constant),                 ; 24 bits of padding to full 32 bytes
-        0x95, 0x05,          //   Report Count (5),
-        0x05, 0x08,          //   Usage Page (LEDs),
-        0x19, 0x01,          //   Usage Minimum (1),
-        0x29, 0x05,          //   Usage Maximum (5),
-        0x91, 0x02,          //   Output (Data, Variable, Absolute), ;LED report
-        0x95, 0x01,          //   Report Count (3),
-        0x91, 0x03,          //   Output (Constant),                 ;LED report padding
-        0xc0                 // End Collection
-};
-*/
-
-/* Boot protocol compliant report descriptor */
-/*
-static uint8_t PROGMEM keyboard_hid_report_desc[] = {
-        0x05, 0x01,          // Usage Page (Generic Desktop),
-        0x09, 0x06,          // Usage (Keyboard),
-        0xA1, 0x01,          // Collection (Application),
-        0x75, 0x01,          //   Report Size (1),
-        0x95, 0x08,          //   Report Count (8),
-        0x05, 0x07,          //   Usage Page (Key Codes),
-        0x19, 0xE0,          //   Usage Minimum (224),
-        0x29, 0xE7,          //   Usage Maximum (231),
-        0x15, 0x00,          //   Logical Minimum (0),
-        0x25, 0x01,          //   Logical Maximum (1),
-        0x81, 0x02,          //   Input (Data, Variable, Absolute), ;Modifier byte
-        0x95, 0x01,          //   Report Count (1),
-        0x75, 0x08,          //   Report Size (8),
-        0x81, 0x03,          //   Input (Constant),                 ;Reserved byte
-        0x95, 0x05,          //   Report Count (5),
-        0x75, 0x01,          //   Report Size (1),
-        0x05, 0x08,          //   Usage Page (LEDs),
-        0x19, 0x01,          //   Usage Minimum (1),
-        0x29, 0x05,          //   Usage Maximum (5),
-        0x91, 0x02,          //   Output (Data, Variable, Absolute), ;LED report
-        0x95, 0x01,          //   Report Count (1),
-        0x75, 0x03,          //   Report Size (3),
-        0x91, 0x03,          //   Output (Constant),                 ;LED report padding
-        0x95, 0x06,          //   Report Count (6),
-        0x75, 0x08,          //   Report Size (8),
-        0x15, 0x00,          //   Logical Minimum (0),
-        0x25, 0x68,          //   Logical Maximum(104),
-        0x05, 0x07,          //   Usage Page (Key Codes),
-        0x19, 0x00,          //   Usage Minimum (0),
-        0x29, 0x68,          //   Usage Maximum (104),
-        0x81, 0x00,          //   Input (Data, Array),
-        0xc0                 // End Collection
-};
-*/
 /* Simple 256-bit bitmap HID report descriptor. Bit on position i represents
  * the state of key number i. This allows for reserved 1-byte keycodes to be
  * sent to the host, which is not standard-compliant, so care has to be taken
@@ -188,7 +104,7 @@ static const uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	0,					// iConfiguration
 	0xA0,					// bmAttributes
 	50,					// bMaxPower
-	/* HID keyboard */
+	/* ---------------------- HID keyboard ----------------------------- */
 	// interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
 	9,					// bLength
 	4,					// bDescriptorType
@@ -215,7 +131,7 @@ static const uint8_t PROGMEM config1_descriptor[CONFIG1_DESC_SIZE] = {
 	0x03,					// bmAttributes (0x03=intr)
 	KEYBOARD_SIZE, 0,			// wMaxPacketSize
 	KEYBOARD_INTERVAL,			// bInterval
-	/* HID rawhid */
+	/* --------------------- HID rawhid---------------------------------- */
 	// interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
 	9,					// bLength
 	4,					// bDescriptorType
@@ -256,20 +172,21 @@ struct usb_string_descriptor_struct {
 	uint8_t bDescriptorType;
 	int16_t wString[];
 };
+#define ENGLISH_US_CODE 0x0409
 static const struct usb_string_descriptor_struct PROGMEM string0 = {
-	4,
-	3,
-	{0x0409}
+	.bLength         = 4, /* 2 bytes for header and 2 for one language code */
+	.bDescriptorType = 3,
+	.wString         = {ENGLISH_US_CODE}
 };
 static const struct usb_string_descriptor_struct PROGMEM string1 = {
-	sizeof(STR_MANUFACTURER),
-	3,
-	STR_MANUFACTURER
+	.bLength         = 2 + sizeof(STR_MANUFACTURER),
+	.bDescriptorType = 3,
+	.wString         = STR_MANUFACTURER
 };
 static const struct usb_string_descriptor_struct PROGMEM string2 = {
-	sizeof(STR_PRODUCT),
-	3,
-	STR_PRODUCT
+	.bLength         = 2 + sizeof(STR_PRODUCT),
+	.bDescriptorType = 3,
+	.wString         = STR_PRODUCT
 };
 
 // This table defines which descriptor data is sent for each specific
@@ -279,7 +196,7 @@ static const struct descriptor_list_struct {
 	uint16_t	wIndex;
 	const uint8_t	*addr;
 	uint8_t		length;
-} PROGMEM descriptor_list[] = {
+} PROGMEM desc_list[] = {
 	{0x0100, 0x0000, device_descriptor, sizeof(device_descriptor)},
 	{0x0200, 0x0000, config1_descriptor, sizeof(config1_descriptor)},
 	{0x2200, KEYBOARD_INTERFACE, keyboard_hid_report_desc, sizeof(keyboard_hid_report_desc)},
@@ -287,7 +204,7 @@ static const struct descriptor_list_struct {
 	{0x2200, RAWHID_INTERFACE, rawhid_hid_report_desc, sizeof(rawhid_hid_report_desc)},
 	{0x2100, RAWHID_INTERFACE, config1_descriptor+RAWHID_HID_DESC_OFFSET, 9},
 	{0x0300, 0x0000, (const uint8_t *)&string0, 4},
-	{0x0301, 0x0409, (const uint8_t *)&string1, sizeof(STR_MANUFACTURER)},
-	{0x0302, 0x0409, (const uint8_t *)&string2, sizeof(STR_PRODUCT)}
+	{0x0301, ENGLISH_US_CODE, (const uint8_t *)&string1, sizeof(STR_MANUFACTURER)},
+	{0x0302, ENGLISH_US_CODE, (const uint8_t *)&string2, sizeof(STR_PRODUCT)}
 };
-#define NUM_DESC_LIST (sizeof(descriptor_list)/sizeof(struct descriptor_list_struct))
+#define NUM_DESC_LIST ARR_SZ(desc_list)
